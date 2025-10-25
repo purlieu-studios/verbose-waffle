@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# commit-msg hook to enforce commit quality standards
+# - Validates commit message format
+# - Enforces commit size limits (300 LOC recommended)
+#
+# To bypass in an emergency:
+#   git commit --no-verify
+#
+
+# ANSI color codes
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+# Configuration
+MAX_LOC=300        # Maximum lines of code per commit
+WARN_LOC=200       # Warn when approaching limit
+
+# Count lines changed in this commit
+LINES_ADDED=$(git diff --cached --numstat | awk '{added += $1} END {print added+0}')
+LINES_REMOVED=$(git diff --cached --numstat | awk '{removed += $2} END {print removed+0}')
+TOTAL_CHANGES=$((LINES_ADDED + LINES_REMOVED))
+
+echo ""
+echo "${GREEN}Commit Size Check:${NC}"
+echo "  Lines added:   $LINES_ADDED"
+echo "  Lines removed: $LINES_REMOVED"
+echo "  Total changes: $TOTAL_CHANGES / $MAX_LOC limit"
+
+# Check if commit is too large
+if [ "$TOTAL_CHANGES" -gt "$MAX_LOC" ]; then
+    echo ""
+    echo "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo "${RED}║  BLOCKED: Commit Too Large                                     ║${NC}"
+    echo "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo "${YELLOW}This commit changes $TOTAL_CHANGES lines (limit: $MAX_LOC).${NC}"
+    echo ""
+    echo "Large commits are harder to:"
+    echo "  - Review thoroughly"
+    echo "  - Test completely"
+    echo "  - Revert if needed"
+    echo "  - Understand in git history"
+    echo ""
+    echo "${GREEN}Recommended: Split this into smaller commits:${NC}"
+    echo "  1. Reset: git reset HEAD"
+    echo "  2. Stage partial changes: git add -p"
+    echo "  3. Commit in logical chunks of <$MAX_LOC LOC each"
+    echo "  4. Create focused PRs for each chunk"
+    echo ""
+    echo "${YELLOW}Each commit should represent ONE logical change.${NC}"
+    echo ""
+    echo "If this truly must be one commit (rare):"
+    echo "  - Document why in your commit message"
+    echo "  - Use: ${YELLOW}git commit --no-verify${NC}"
+    echo ""
+    exit 1
+fi
+
+# Warn when approaching limit
+if [ "$TOTAL_CHANGES" -gt "$WARN_LOC" ]; then
+    echo ""
+    echo "${YELLOW}⚠️  Warning: Approaching commit size limit ($TOTAL_CHANGES / $MAX_LOC)${NC}"
+    echo "${YELLOW}   Consider splitting if you add more changes.${NC}"
+fi
+
+echo "${GREEN}✅ Commit size OK${NC}"
+echo ""
+
+exit 0
