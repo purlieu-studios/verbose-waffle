@@ -1,0 +1,138 @@
+name: Python CI - MCP Servers Test & Coverage
+
+on:
+  pull_request:
+    paths:
+      - 'tools/**/*.py'
+      - 'tools/**/requirements.txt'
+      - '.github/workflows/python-ci.yml'
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'tools/**/*.py'
+      - 'tools/**/requirements.txt'
+
+jobs:
+  test-mcp-servers:
+    name: Test MCP Servers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-asyncio
+
+          # Install each MCP server's dependencies
+          for req in tools/*/requirements.txt; do
+            if [ -f "$req" ]; then
+              echo "Installing dependencies from $req"
+              pip install -r "$req"
+            fi
+          done
+
+      - name: Run tests with coverage
+        run: |
+          pytest tools/ \
+            --cov=tools \
+            --cov-report=term \
+            --cov-report=html:coverage/python \
+            --cov-report=xml:coverage/python/coverage.xml \
+            --cov-fail-under=90 \
+            -v
+
+      - name: Display coverage summary
+        if: always()
+        run: |
+          echo ""
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  Python Code Coverage Summary                            ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          coverage report
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-coverage-report
+          path: coverage/python/
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read coverage XML to extract percentage
+            const xml = fs.readFileSync('coverage/python/coverage.xml', 'utf8');
+            const match = xml.match(/line-rate="([0-9.]+)"/);
+            const coverage = match ? (parseFloat(match[1]) * 100).toFixed(2) : 'N/A';
+
+            const comment = `## 🐍 Python Code Coverage Report
+
+            **Coverage: ${coverage}%** (Required: 90%)
+
+            ${coverage >= 90 ? '✅' : '❌'} ${coverage >= 90 ? 'Coverage threshold met!' : 'Coverage below threshold!'}
+
+            [View detailed coverage report in artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  lint:
+    name: Python Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort mypy
+
+      - name: Run Black (formatting check)
+        run: black --check tools/
+
+      - name: Run isort (import sorting check)
+        run: isort --check-only tools/
+
+      - name: Run Flake8 (linting)
+        run: flake8 tools/ --max-line-length=100 --extend-ignore=E203,W503
+
+      - name: Run MyPy (type checking)
+        run: mypy tools/ --ignore-missing-imports
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  Python Code Quality Analysis Complete                  ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "✅ Code formatting (Black) passed"
+          echo "✅ Import sorting (isort) passed"
+          echo "✅ Linting (Flake8) passed"
+          echo "✅ Type checking (MyPy) passed"
+          echo ""
