@@ -6,14 +6,10 @@ Exposes the vector store as an MCP tool that Claude CLI can use
 to search indexed codebases.
 """
 
-import asyncio
-import json
 import sys
-from typing import Any, Dict, List
+from typing import Optional
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.server.fastmcp import FastMCP
 
 from vector_store import VectorStore
 
@@ -21,124 +17,68 @@ from vector_store import VectorStore
 # Initialize vector store globally
 store = VectorStore()
 
-# Create MCP server
-app = Server("codebase-search")
+# Create FastMCP server
+mcp = FastMCP("codebase-search")
 
 
-@app.list_tools()
-async def list_tools() -> List[Tool]:
+@mcp.tool()
+def search_codebase(query: str, top_k: Optional[int] = 5) -> str:
     """
-    List available MCP tools.
+    Search indexed codebase for relevant code using semantic search.
 
-    Returns:
-        List of available tools
-    """
-    return [
-        Tool(
-            name="search_codebase",
-            description=(
-                "Search indexed codebase for relevant code using semantic search. "
-                "Returns code chunks with file locations and line numbers. "
-                "Use this to find implementations, understand code structure, "
-                "or locate specific functionality."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": (
-                            "Natural language search query. Examples: "
-                            "'authentication logic', 'database connection', "
-                            "'enemy AI behavior', 'user input validation'"
-                        ),
-                    },
-                    "top_k": {
-                        "type": "number",
-                        "description": "Number of results to return (default: 5, max: 20)",
-                        "default": 5,
-                        "minimum": 1,
-                        "maximum": 20,
-                    },
-                },
-                "required": ["query"],
-            },
-        )
-    ]
-
-
-@app.call_tool()
-async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
-    """
-    Handle tool calls from Claude.
+    Returns code chunks with file locations and line numbers.
+    Use this to find implementations, understand code structure,
+    or locate specific functionality.
 
     Args:
-        name: Tool name
-        arguments: Tool arguments
+        query: Natural language search query. Examples: 'authentication logic',
+               'database connection', 'enemy AI behavior', 'user input validation'
+        top_k: Number of results to return (default: 5, max: 20)
 
     Returns:
-        List of text content responses
-
-    Raises:
-        ValueError: If tool name is unknown or arguments are invalid
+        Formatted search results with code chunks and file locations
     """
-    if name != "search_codebase":
-        raise ValueError(f"Unknown tool: {name}")
+    # Validate and clamp top_k
+    if top_k is None:
+        top_k = 5
+    top_k = max(1, min(int(top_k), 20))
 
-    # Extract arguments
-    query = arguments.get("query", "").strip()
+    # Validate query
+    query = query.strip()
     if not query:
-        raise ValueError("Query parameter is required and cannot be empty")
-
-    top_k = int(arguments.get("top_k", 5))
-    top_k = max(1, min(top_k, 20))  # Clamp to [1, 20]
+        return "Error: Query parameter is required and cannot be empty"
 
     try:
         # Perform search
         results = store.search(query, top_k=top_k)
 
         if not results:
-            return [
-                TextContent(
-                    type="text",
-                    text=(
-                        f"No results found for query: '{query}'\n\n"
-                        "This could mean:\n"
-                        "1. The codebase hasn't been indexed yet (run: python indexer.py /path/to/project)\n"
-                        "2. No code matches this query\n"
-                        "3. Try rephrasing your query with different keywords"
-                    ),
-                )
-            ]
+            return (
+                f"No results found for query: '{query}'\n\n"
+                "This could mean:\n"
+                "1. The codebase hasn't been indexed yet (run: python indexer.py /path/to/project)\n"
+                "2. No code matches this query\n"
+                "3. Try rephrasing your query with different keywords"
+            )
 
-        # Format results
-        formatted = format_search_results(query, results)
-
-        return [TextContent(type="text", text=formatted)]
+        # Format and return results
+        return format_search_results(query, results)
 
     except ValueError as e:
-        # Handle vector store errors (e.g., no data indexed)
-        return [
-            TextContent(
-                type="text",
-                text=(
-                    f"Error: {str(e)}\n\n"
-                    "Make sure to index your codebase first:\n"
-                    "  python indexer.py /path/to/your/project"
-                ),
-            )
-        ]
+        return (
+            f"Error: {str(e)}\n\n"
+            "Make sure to index your codebase first:\n"
+            "  python indexer.py /path/to/your/project"
+        )
     except Exception as e:
-        # Unexpected errors
-        error_msg = (
+        return (
             f"Search error: {str(e)}\n\n"
             f"Query: {query}\n"
             f"Top K: {top_k}"
         )
-        return [TextContent(type="text", text=error_msg)]
 
 
-def format_search_results(query: str, results: List[Dict]) -> str:
+def format_search_results(query: str, results: list[dict]) -> str:
     """
     Format search results for display.
 
@@ -194,7 +134,7 @@ def format_search_results(query: str, results: List[Dict]) -> str:
     return "\n".join(lines)
 
 
-async def main():
+def main():
     """Run the MCP server."""
     # Check if vector store has data
     try:
@@ -215,14 +155,9 @@ async def main():
     except Exception as e:
         print(f"Warning: Could not get vector store stats: {e}", file=sys.stderr)
 
-    # Run the server
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options(),
-        )
+    # Run the FastMCP server
+    mcp.run()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
