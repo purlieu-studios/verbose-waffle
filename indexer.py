@@ -312,6 +312,76 @@ class CodeIndexer:
         print(f"{'='*60}\n")
 
 
+def run_indexing(
+    directory: str,
+    db_path: str = "./lancedb",
+    clear: bool = False,
+) -> Dict:
+    """
+    Run the indexing process programmatically.
+
+    Args:
+        directory: Directory to index
+        db_path: Path to vector database
+        clear: Whether to clear existing database before indexing
+
+    Returns:
+        Dictionary with indexing results:
+        - success: bool
+        - files_processed: int
+        - files_skipped: int
+        - chunks_added: int
+        - total_chunks: int
+        - unique_files: int
+        - error: str (if success=False)
+
+    Raises:
+        ValueError: If directory is invalid
+    """
+    try:
+        # Initialize vector store
+        print("Initializing vector store...")
+        store = VectorStore(db_path=db_path)
+
+        # Clear if requested
+        if clear:
+            print("Clearing existing database...")
+            store.clear()
+
+        # Initialize indexer
+        indexer = CodeIndexer(directory)
+
+        # Run indexing
+        indexer.index(store)
+
+        # Get final stats
+        stats = store.get_stats()
+        print("Database Statistics:")
+        print(f"  Total chunks: {stats.get('total_chunks', 0)}")
+        print(f"  Unique files: {stats.get('unique_files', 0)}")
+        print(f"  Database: {stats.get('db_path', 'N/A')}")
+
+        return {
+            "success": True,
+            "files_processed": indexer.files_processed,
+            "files_skipped": indexer.files_skipped,
+            "chunks_added": indexer.total_chunks,
+            "total_chunks": stats.get("total_chunks", 0),
+            "unique_files": stats.get("unique_files", 0),
+        }
+
+    except ValueError as e:
+        return {
+            "success": False,
+            "error": str(e),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}",
+        }
+
+
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -345,38 +415,18 @@ Examples:
     args = parser.parse_args()
 
     try:
-        # Initialize vector store
-        print("Initializing vector store...")
-        store = VectorStore(db_path=args.db_path)
+        result = run_indexing(
+            directory=args.directory,
+            db_path=args.db_path,
+            clear=args.clear,
+        )
 
-        # Clear if requested
-        if args.clear:
-            print("Clearing existing database...")
-            store.clear()
+        if not result["success"]:
+            print(f"[ERROR] {result.get('error', 'Unknown error')}")
+            sys.exit(1)
 
-        # Initialize indexer
-        indexer = CodeIndexer(args.directory)
-
-        # Run indexing
-        indexer.index(store)
-
-        # Show final stats
-        stats = store.get_stats()
-        print("Database Statistics:")
-        print(f"  Total chunks: {stats.get('total_chunks', 0)}")
-        print(f"  Unique files: {stats.get('unique_files', 0)}")
-        print(f"  Database: {stats.get('db_path', 'N/A')}")
-
-    except ValueError as e:
-        print(f"[ERROR] {e}")
-        sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n[WARNING] Indexing interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        print(f"[ERROR] Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
         sys.exit(1)
 
 

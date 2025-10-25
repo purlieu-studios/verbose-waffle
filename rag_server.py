@@ -12,6 +12,7 @@ from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
 from vector_store import VectorStore
+from indexer import run_indexing
 
 
 # Initialize vector store globally
@@ -76,6 +77,77 @@ def search_codebase(query: str, top_k: Optional[int] = 5) -> str:
             f"Query: {query}\n"
             f"Top K: {top_k}"
         )
+
+
+@mcp.tool()
+def reindex_codebase(directory: Optional[str] = ".", clear: Optional[bool] = False) -> str:
+    """
+    Reindex the codebase to update the vector database with latest code changes.
+
+    Use this when you've made significant changes to the codebase and want to
+    ensure search results reflect the current state of the code.
+
+    Args:
+        directory: Directory to index (default: current directory ".")
+        clear: Whether to clear the existing database before reindexing (default: False)
+               Set to True for a fresh start, False to add/update incrementally
+
+    Returns:
+        Formatted status message with indexing results
+    """
+    # Validate directory
+    if not directory:
+        directory = "."
+
+    # Convert to absolute path for better clarity
+    import os
+    abs_directory = os.path.abspath(directory)
+
+    # Build status header
+    action = "Clearing and reindexing" if clear else "Reindexing"
+    lines = [
+        f"{'='*70}",
+        f"{action}: {abs_directory}",
+        f"{'='*70}",
+        "",
+    ]
+
+    # Run the indexing
+    result = run_indexing(directory=directory, db_path="./lancedb", clear=clear)
+
+    if not result["success"]:
+        error_msg = result.get("error", "Unknown error")
+        lines.extend([
+            f"❌ Indexing failed: {error_msg}",
+            "",
+            "Common issues:",
+            "- Directory doesn't exist or is not accessible",
+            "- No supported files found (.cs, .md, .txt)",
+            "- Permission denied",
+            "",
+            f"{'='*70}",
+        ])
+        return "\n".join(lines)
+
+    # Success - format results
+    lines.extend([
+        "✅ Indexing completed successfully!",
+        "",
+        "Results:",
+        f"  • Files processed:  {result['files_processed']}",
+        f"  • Files skipped:    {result['files_skipped']}",
+        f"  • Chunks added:     {result['chunks_added']}",
+        "",
+        "Database Statistics:",
+        f"  • Total chunks:     {result['total_chunks']}",
+        f"  • Unique files:     {result['unique_files']}",
+        "",
+        f"{'='*70}",
+        "",
+        "💡 Tip: Use search_codebase to test the updated index!",
+    ])
+
+    return "\n".join(lines)
 
 
 def format_search_results(query: str, results: list[dict]) -> str:
