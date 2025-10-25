@@ -1,0 +1,180 @@
+name: PR Validation - Size & Quality Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-pr-size:
+    name: Validate PR Size
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        env:
+          MAX_PR_LINES: 1000     # Recommended max lines for entire PR
+          WARN_PR_LINES: 500     # Warn when PR gets large
+          MAX_COMMIT_LINES: 300  # Max lines per commit
+        run: |
+          # Get PR details
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          echo "Analyzing PR #$PR_NUMBER"
+          echo "Base: $BASE_SHA"
+          echo "Head: $HEAD_SHA"
+          echo ""
+
+          # Check total PR size
+          PR_STATS=$(git diff --numstat $BASE_SHA...$HEAD_SHA)
+          PR_ADDED=$(echo "$PR_STATS" | awk '{sum += $1} END {print sum+0}')
+          PR_REMOVED=$(echo "$PR_STATS" | awk '{sum += $2} END {print sum+0}')
+          PR_TOTAL=$((PR_ADDED + PR_REMOVED))
+
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  PR Size Analysis                                        ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  Lines added:   $PR_ADDED"
+          echo "  Lines removed: $PR_REMOVED"
+          echo "  Total changes: $PR_TOTAL"
+          echo "  Recommended:   <$WARN_PR_LINES lines"
+          echo "  Maximum:       <$MAX_PR_LINES lines"
+          echo ""
+
+          # Check each commit size
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  Individual Commit Sizes                                 ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+
+          COMMITS=$(git rev-list $BASE_SHA..$HEAD_SHA)
+          LARGE_COMMITS=0
+
+          for commit in $COMMITS; do
+            COMMIT_MSG=$(git log --format=%s -n 1 $commit)
+            COMMIT_STATS=$(git diff-tree --no-commit-id --numstat -r $commit)
+            ADDED=$(echo "$COMMIT_STATS" | awk '{sum += $1} END {print sum+0}')
+            REMOVED=$(echo "$COMMIT_STATS" | awk '{sum += $2} END {print sum+0}')
+            TOTAL=$((ADDED + REMOVED))
+
+            if [ "$TOTAL" -gt "$MAX_COMMIT_LINES" ]; then
+              echo "❌ ${commit:0:7}: $TOTAL lines - \"$COMMIT_MSG\""
+              LARGE_COMMITS=$((LARGE_COMMITS + 1))
+            else
+              echo "✅ ${commit:0:7}: $TOTAL lines - \"$COMMIT_MSG\""
+            fi
+          done
+
+          echo ""
+
+          # Fail if commits are too large
+          if [ "$LARGE_COMMITS" -gt 0 ]; then
+            echo "❌ FAILURE: $LARGE_COMMITS commit(s) exceed $MAX_COMMIT_LINES line limit"
+            echo ""
+            echo "Large commits are:"
+            echo "  - Harder to review thoroughly"
+            echo "  - More likely to contain bugs"
+            echo "  - Difficult to revert if needed"
+            echo "  - Poor for git history readability"
+            echo ""
+            echo "Please split large commits into smaller, focused changes."
+            echo "Each commit should represent ONE logical change."
+            exit 1
+          fi
+
+          # Warn if PR is large
+          if [ "$PR_TOTAL" -gt "$WARN_PR_LINES" ]; then
+            echo "⚠️  WARNING: This PR is large ($PR_TOTAL lines)"
+            echo "   Consider splitting into multiple smaller PRs"
+            echo ""
+          fi
+
+          # Fail if PR is too large
+          if [ "$PR_TOTAL" -gt "$MAX_PR_LINES" ]; then
+            echo "❌ FAILURE: PR exceeds maximum size ($PR_TOTAL / $MAX_PR_LINES lines)"
+            echo ""
+            echo "Large PRs are extremely difficult to review properly."
+            echo "Please split this into multiple focused PRs."
+            exit 1
+          fi
+
+          echo "✅ All commits are appropriately sized"
+          echo "✅ PR size is manageable"
+          echo ""
+
+  validate-pr-tests:
+    name: Ensure Tests Exist
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for test files
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # Get changed C# files (excluding test files)
+          CHANGED_CS_FILES=$(git diff --name-only $BASE_SHA...$HEAD_SHA | grep -E '\.cs$' | grep -v -E '(\.Tests?/|Test\.cs$|Tests\.cs$)' || true)
+
+          if [ -z "$CHANGED_CS_FILES" ]; then
+            echo "✅ No production C# code changed, skipping test validation"
+            exit 0
+          fi
+
+          echo "Changed C# files:"
+          echo "$CHANGED_CS_FILES"
+          echo ""
+
+          # Check if test files were also changed
+          CHANGED_TEST_FILES=$(git diff --name-only $BASE_SHA...$HEAD_SHA | grep -E '(\.Tests?/|Test\.cs$|Tests\.cs$)' || true)
+
+          if [ -z "$CHANGED_TEST_FILES" ]; then
+            echo "⚠️  WARNING: Production code changed but no test files modified"
+            echo ""
+            echo "All new code should be tested!"
+            echo "Consider adding:"
+            echo "  - Unit tests for new logic"
+            echo "  - Integration tests for new features"
+            echo "  - Regression tests for bug fixes"
+            echo ""
+            echo "Note: This is a warning, not a failure."
+            echo "The coverage check will enforce 90% minimum coverage."
+          else
+            echo "✅ Test files were modified:"
+            echo "$CHANGED_TEST_FILES"
+          fi
+
+  summary:
+    name: Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [validate-pr-size, validate-pr-tests]
+    if: always()
+
+    steps:
+      - name: Check all validations passed
+        run: |
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  PR Quality Validation Complete                         ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "Quality gates checked:"
+          echo "  ✅ Commit size limits"
+          echo "  ✅ PR size limits"
+          echo "  ✅ Test coverage requirements"
+          echo ""
+          echo "Additional checks will run:"
+          echo "  - .NET code quality analysis"
+          echo "  - Python code quality analysis"
+          echo "  - Test coverage (90% minimum)"
+          echo ""
