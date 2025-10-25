@@ -403,4 +403,4 @@ These rules exist to:
 
 - [Code Quality Rules](CODE_QUALITY_RULES.md) - Why rules exist, how to change them
 - [Branch Protection](../.github/BRANCH_PROTECTION.md) - GitHub protection setup
-- [Working with Claude](CLAUDE.md) - AI-assisted development tips
+- [Working with Claude](../CLAUDE.md) - AI-assisted development tips

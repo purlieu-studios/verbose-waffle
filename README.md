@@ -57,7 +57,7 @@ cooking-project/
 ## Documentation
 
 - **[Development Workflow](docs/DEVELOPMENT_WORKFLOW.md)** - Start here! Complete guide to our development process
-- [Working with Claude Code](docs/CLAUDE.md)
+- **[Working with Claude Code](CLAUDE.md)** - How to use Claude Code in this project
 - [Code Quality Rules](docs/CODE_QUALITY_RULES.md)
 - [Code Search Tool](tools/code-search/README.md)
 
