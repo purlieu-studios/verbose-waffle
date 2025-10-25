@@ -7,6 +7,14 @@ on:
       - 'Directory.Build.props'
       - '.editorconfig'
       - '.github/workflows/validate-rules.yml'
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'CodeAnalysis.ruleset'
+      - 'Directory.Build.props'
+      - '.editorconfig'
 
 jobs:
   validate-rules:
@@ -14,33 +22,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR branch
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Checkout base branch
+      - name: Determine comparison branch
+        id: branch
         run: |
-          git fetch origin ${{ github.base_ref }}
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "base=${{ github.base_ref }}" >> $GITHUB_OUTPUT
+            echo "Using PR base: ${{ github.base_ref }}"
+          else
+            # For direct push, compare with previous commit
+            echo "base=HEAD~1" >> $GITHUB_OUTPUT
+            echo "Using previous commit: HEAD~1"
+          fi
+
+      - name: Check if ruleset changed
+        id: ruleset_changed
+        run: |
+          if git diff --name-only ${{ steps.branch.outputs.base }} HEAD | grep -q "CodeAnalysis.ruleset"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Validate CodeAnalysis.ruleset
-        if: contains(github.event.pull_request.changed_files, 'CodeAnalysis.ruleset')
+        if: steps.ruleset_changed.outputs.changed == 'true'
         run: |
           echo "⚠️  WARNING: CodeAnalysis.ruleset has been modified!"
           echo ""
           echo "Checking for weakened rules..."
 
-          # Count Error rules in base vs PR
-          BASE_ERRORS=$(git show origin/${{ github.base_ref }}:CodeAnalysis.ruleset | grep -c 'Action="Error"' || true)
-          PR_ERRORS=$(grep -c 'Action="Error"' CodeAnalysis.ruleset || true)
+          # Count Error rules in base vs current
+          BASE_ERRORS=$(git show ${{ steps.branch.outputs.base }}:CodeAnalysis.ruleset | grep -c 'Action="Error"' || true)
+          CURRENT_ERRORS=$(grep -c 'Action="Error"' CodeAnalysis.ruleset || true)
 
-          echo "Base branch has $BASE_ERRORS rules set to Error"
-          echo "PR branch has $PR_ERRORS rules set to Error"
+          echo "Base has $BASE_ERRORS rules set to Error"
+          echo "Current has $CURRENT_ERRORS rules set to Error"
 
-          if [ "$PR_ERRORS" -lt "$BASE_ERRORS" ]; then
+          if [ "$CURRENT_ERRORS" -lt "$BASE_ERRORS" ]; then
             echo ""
             echo "❌ FAILURE: Rules have been weakened!"
-            echo "   Number of Error rules decreased from $BASE_ERRORS to $PR_ERRORS"
+            echo "   Number of Error rules decreased from $BASE_ERRORS to $CURRENT_ERRORS"
             echo ""
             echo "This PR appears to weaken code quality enforcement."
             echo "Please read CODE_QUALITY_RULES.md for the proper process."
@@ -57,8 +82,17 @@ jobs:
           echo "   Note: This check only counts Error rules, not content changes."
           echo "   Reviewers: Please manually verify no rules were inappropriately relaxed."
 
+      - name: Check if Directory.Build.props changed
+        id: buildprops_changed
+        run: |
+          if git diff --name-only ${{ steps.branch.outputs.base }} HEAD | grep -q "Directory.Build.props"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Validate Directory.Build.props
-        if: contains(github.event.pull_request.changed_files, 'Directory.Build.props')
+        if: steps.buildprops_changed.outputs.changed == 'true'
         run: |
           echo "⚠️  WARNING: Directory.Build.props has been modified!"
           echo ""
@@ -90,11 +124,10 @@ jobs:
 
       - name: Check for CODE_QUALITY_RULES.md update
         if: |
-          contains(github.event.pull_request.changed_files, 'CodeAnalysis.ruleset') ||
-          contains(github.event.pull_request.changed_files, 'Directory.Build.props') ||
-          contains(github.event.pull_request.changed_files, '.editorconfig')
+          steps.ruleset_changed.outputs.changed == 'true' ||
+          steps.buildprops_changed.outputs.changed == 'true'
         run: |
-          if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "CODE_QUALITY_RULES.md"; then
+          if ! git diff --name-only ${{ steps.branch.outputs.base }} HEAD | grep -q "CODE_QUALITY_RULES.md"; then
             echo "⚠️  WARNING: Code quality config changed but CODE_QUALITY_RULES.md not updated"
             echo ""
             echo "When changing code quality rules, you should document:"
