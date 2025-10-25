@@ -56,7 +56,8 @@ cooking-project/
 
 ## Documentation
 
-- [Working with Claude Code](docs/CLAUDE.md)
+- **[Development Workflow](docs/DEVELOPMENT_WORKFLOW.md)** - Start here! Complete guide to our development process
+- **[Working with Claude Code](CLAUDE.md)** - How to use Claude Code in this project
 - [Code Quality Rules](docs/CODE_QUALITY_RULES.md)
 - [Code Search Tool](tools/code-search/README.md)
 
@@ -68,9 +69,65 @@ This is a monorepo containing multiple projects that work together:
 - **Game Logic** (C# Library): Shared game logic used by both game and web
 - **Web** (ASP.NET): Backend services, APIs, and player accounts
 
+### Quality Standards
+
+We enforce strict quality standards to ensure maintainable, bug-free code:
+
+#### 🔒 Enforced by Git Hooks
+- **Small commits:** ≤300 LOC per commit
+- **Protected configs:** Code quality rules can't be weakened accidentally
+
+#### 🤖 Enforced by CI
+- **Test coverage:** 90%+ required on all code
+- **All tests pass:** No failing tests allowed
+- **Code analysis:** Warnings treated as errors
+- **PR size:** ≤1000 LOC recommended per PR
+
+#### 📋 Development Workflow
+1. Create feature branch
+2. Make small, focused commits (<300 LOC each)
+3. Write tests (maintain 90%+ coverage)
+4. Create pull request
+5. CI validates everything automatically
+6. Review and merge when green
+
+**See [DEVELOPMENT_WORKFLOW.md](docs/DEVELOPMENT_WORKFLOW.md) for complete details.**
+
+### Quick Start for Contributors
+
+```bash
+# Enable git hooks
+git config core.hooksPath .githooks
+
+# Create feature branch
+git checkout -b feature/your-feature
+
+# Make small commits with tests
+git commit -m "Add HealthComponent"  # <300 LOC
+git commit -m "Add tests for HealthComponent"  # <300 LOC
+
+# Push and create PR
+git push -u origin feature/your-feature
+gh pr create
+
+# CI will validate:
+# ✅ Commit sizes
+# ✅ Test coverage (90%+)
+# ✅ All tests pass
+# ✅ Code quality rules
+```
+
 ## Contributing
 
-See [CODE_QUALITY_RULES.md](docs/CODE_QUALITY_RULES.md) for coding standards and practices.
+**Before contributing, read:**
+1. [Development Workflow](docs/DEVELOPMENT_WORKFLOW.md) - Required reading
+2. [Code Quality Rules](docs/CODE_QUALITY_RULES.md) - Why the rules exist
+
+**TL;DR:**
+- Small commits (<300 LOC)
+- Always include tests (90%+ coverage)
+- All PRs must pass CI
+- One logical change per commit
 
 ## License
 

@@ -1,0 +1,165 @@
+name: .NET CI - Build, Test, Coverage
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**/*.cs'
+      - 'apps/**/*.csproj'
+      - 'packages/**/*.cs'
+      - 'packages/**/*.csproj'
+      - 'Directory.Build.props'
+      - 'CodeAnalysis.ruleset'
+      - '.github/workflows/dotnet-ci.yml'
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'apps/**/*.cs'
+      - 'apps/**/*.csproj'
+      - 'packages/**/*.cs'
+      - 'packages/**/*.csproj'
+
+jobs:
+  build-and-test:
+    name: Build, Test & Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for coverage comparison
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests with coverage
+        run: |
+          dotnet test \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage \
+            --logger "trx;LogFileName=test-results.trx"
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Generate coverage report
+        run: |
+          reportgenerator \
+            -reports:"coverage/**/coverage.cobertura.xml" \
+            -targetdir:"coverage/report" \
+            -reporttypes:"Html;TextSummary;Cobertura"
+
+      - name: Display coverage summary
+        run: cat coverage/report/Summary.txt
+
+      - name: Check coverage threshold
+        run: |
+          # Extract line coverage percentage
+          COVERAGE=$(grep -oP 'Line coverage: \K[0-9.]+' coverage/report/Summary.txt)
+          THRESHOLD=90.0
+
+          echo "Current coverage: $COVERAGE%"
+          echo "Required coverage: $THRESHOLD%"
+
+          # Compare coverage (bash arithmetic only does integers, so multiply by 10)
+          COVERAGE_INT=$(echo "$COVERAGE * 10" | bc | cut -d'.' -f1)
+          THRESHOLD_INT=$(echo "$THRESHOLD * 10" | bc | cut -d'.' -f1)
+
+          if [ "$COVERAGE_INT" -lt "$THRESHOLD_INT" ]; then
+            echo ""
+            echo "❌ FAILURE: Code coverage below threshold!"
+            echo "   Current: $COVERAGE%"
+            echo "   Required: $THRESHOLD%"
+            echo ""
+            echo "All new code must be tested."
+            echo "Increase test coverage before merging."
+            exit 1
+          fi
+
+          echo "✅ Coverage check passed: $COVERAGE% >= $THRESHOLD%"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/report/
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: coverage/**/*.trx
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('coverage/report/Summary.txt', 'utf8');
+
+            const comment = `## 📊 Code Coverage Report
+
+            \`\`\`
+            ${summary}
+            \`\`\`
+
+            [View detailed coverage report in artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  analyze:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run analyzers
+        run: |
+          dotnet build \
+            --no-restore \
+            --configuration Release \
+            /p:TreatWarningsAsErrors=true \
+            /p:EnforceCodeStyleInBuild=true
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  .NET Code Quality Analysis Complete                    ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "✅ All code quality rules passed"
+          echo "✅ No warnings found (TreatWarningsAsErrors=true)"
+          echo ""
