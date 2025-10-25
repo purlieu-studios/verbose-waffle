@@ -115,20 +115,20 @@ jobs:
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: steps.coverage_check.outputs.has_coverage == 'true'
         with:
           name: coverage-report
           path: coverage/report/
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
-        if: always()
+        if: steps.coverage_check.outputs.has_coverage == 'true'
         with:
           name: test-results
           path: coverage/**/*.trx
 
       - name: Comment PR with coverage
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.coverage_check.outputs.has_coverage == 'true'
         uses: actions/github-script@v7
         with:
           script: |
