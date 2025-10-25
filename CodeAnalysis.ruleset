@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Strict Code Analysis Rules" Description="Strict enforcement of code quality, security, performance, and style rules for .NET/C#/Godot projects." ToolsVersion="16.0">
+  <Rules AnalyzerId="Microsoft.Analyzers.ManagedCodeAnalysis" RuleNamespace="Microsoft.Rules.Managed">
+    <!-- All rules default to Error unless explicitly overridden -->
+    <Rule Id="CA1000" Action="Error" />
+    <Rule Id="CA1001" Action="Error" />
+    <Rule Id="CA1002" Action="Error" />
+    <Rule Id="CA1003" Action="Error" />
+    <Rule Id="CA1005" Action="Error" />
+    <Rule Id="CA1008" Action="Error" />
+    <Rule Id="CA1010" Action="Error" />
+    <Rule Id="CA1012" Action="Error" />
+    <Rule Id="CA1014" Action="Error" />
+    <Rule Id="CA1016" Action="Error" />
+    <Rule Id="CA1017" Action="Error" />
+    <Rule Id="CA1018" Action="Error" />
+    <Rule Id="CA1019" Action="Error" />
+    <Rule Id="CA1021" Action="Error" />
+    <Rule Id="CA1024" Action="Error" />
+    <Rule Id="CA1027" Action="Error" />
+    <Rule Id="CA1028" Action="Error" />
+    <Rule Id="CA1030" Action="Error" />
+    <Rule Id="CA1031" Action="Warning" /> <!-- Catch specific exceptions, but sometimes generic catch is needed -->
+    <Rule Id="CA1032" Action="Error" />
+    <Rule Id="CA1033" Action="Error" />
+    <Rule Id="CA1034" Action="Error" />
+    <Rule Id="CA1036" Action="Error" />
+    <Rule Id="CA1040" Action="Error" />
+    <Rule Id="CA1041" Action="Error" />
+    <Rule Id="CA1043" Action="Error" />
+    <Rule Id="CA1044" Action="Error" />
+    <Rule Id="CA1045" Action="Error" />
+    <Rule Id="CA1046" Action="Error" />
+    <Rule Id="CA1047" Action="Error" />
+    <Rule Id="CA1050" Action="Error" />
+    <Rule Id="CA1051" Action="Error" />
+    <Rule Id="CA1052" Action="Error" />
+    <Rule Id="CA1054" Action="Error" />
+    <Rule Id="CA1055" Action="Error" />
+    <Rule Id="CA1056" Action="Error" />
+    <Rule Id="CA1058" Action="Error" />
+    <Rule Id="CA1060" Action="Error" />
+    <Rule Id="CA1061" Action="Error" />
+    <Rule Id="CA1062" Action="Error" /> <!-- Null reference check -->
+    <Rule Id="CA1063" Action="Error" />
+    <Rule Id="CA1064" Action="Error" />
+    <Rule Id="CA1065" Action="Error" />
+    <Rule Id="CA1066" Action="Error" />
+    <Rule Id="CA1067" Action="Error" />
+    <Rule Id="CA1068" Action="Error" />
+    <Rule Id="CA1069" Action="Error" />
+    <Rule Id="CA1070" Action="Error" />
+  </Rules>
+
+  <Rules AnalyzerId="Microsoft.CodeQuality.Analyzers" RuleNamespace="Microsoft.CodeQuality.Analyzers">
+    <!-- Security rules - all errors -->
+    <Rule Id="CA2100" Action="Error" /> <!-- SQL injection -->
+    <Rule Id="CA2109" Action="Error" />
+    <Rule Id="CA2119" Action="Error" />
+    <Rule Id="CA2153" Action="Error" />
+    <Rule Id="CA2300" Action="Error" /> <!-- Insecure deserialization -->
+    <Rule Id="CA2301" Action="Error" />
+    <Rule Id="CA2302" Action="Error" />
+    <Rule Id="CA2305" Action="Error" />
+    <Rule Id="CA2310" Action="Error" />
+    <Rule Id="CA2311" Action="Error" />
+    <Rule Id="CA2312" Action="Error" />
+    <Rule Id="CA2315" Action="Error" />
+    <Rule Id="CA2321" Action="Error" />
+    <Rule Id="CA2322" Action="Error" />
+    <Rule Id="CA2326" Action="Error" />
+    <Rule Id="CA2327" Action="Error" />
+    <Rule Id="CA2328" Action="Error" />
+    <Rule Id="CA2329" Action="Error" />
+    <Rule Id="CA2330" Action="Error" />
+    <Rule Id="CA3001" Action="Error" />
+    <Rule Id="CA3002" Action="Error" />
+    <Rule Id="CA3003" Action="Error" />
+    <Rule Id="CA3004" Action="Error" />
+    <Rule Id="CA3005" Action="Error" />
+    <Rule Id="CA3006" Action="Error" />
+    <Rule Id="CA3007" Action="Error" />
+    <Rule Id="CA3008" Action="Error" />
+    <Rule Id="CA3009" Action="Error" />
+    <Rule Id="CA3010" Action="Error" />
+    <Rule Id="CA3011" Action="Error" />
+    <Rule Id="CA3012" Action="Error" />
+    <Rule Id="CA5350" Action="Error" /> <!-- Weak crypto -->
+    <Rule Id="CA5351" Action="Error" />
+    <Rule Id="CA5358" Action="Error" />
+    <Rule Id="CA5359" Action="Error" />
+    <Rule Id="CA5360" Action="Error" />
+    <Rule Id="CA5361" Action="Error" />
+    <Rule Id="CA5362" Action="Error" />
+    <Rule Id="CA5363" Action="Error" />
+    <Rule Id="CA5364" Action="Error" />
+    <Rule Id="CA5365" Action="Error" />
+    <Rule Id="CA5366" Action="Error" />
+    <Rule Id="CA5367" Action="Error" />
+    <Rule Id="CA5368" Action="Error" />
+    <Rule Id="CA5369" Action="Error" />
+    <Rule Id="CA5370" Action="Error" />
+    <Rule Id="CA5371" Action="Error" />
+    <Rule Id="CA5372" Action="Error" />
+    <Rule Id="CA5373" Action="Error" />
+    <Rule Id="CA5374" Action="Error" />
+    <Rule Id="CA5375" Action="Error" />
+    <Rule Id="CA5376" Action="Error" />
+    <Rule Id="CA5377" Action="Error" />
+    <Rule Id="CA5378" Action="Error" />
+    <Rule Id="CA5379" Action="Error" />
+    <Rule Id="CA5380" Action="Error" />
+    <Rule Id="CA5381" Action="Error" />
+    <Rule Id="CA5382" Action="Error" />
+    <Rule Id="CA5383" Action="Error" />
+    <Rule Id="CA5384" Action="Error" />
+    <Rule Id="CA5385" Action="Error" />
+    <Rule Id="CA5386" Action="Error" />
+    <Rule Id="CA5387" Action="Error" />
+    <Rule Id="CA5388" Action="Error" />
+    <Rule Id="CA5389" Action="Error" />
+    <Rule Id="CA5390" Action="Error" />
+    <Rule Id="CA5391" Action="Error" />
+    <Rule Id="CA5392" Action="Error" />
+    <Rule Id="CA5393" Action="Error" />
+    <Rule Id="CA5394" Action="Error" />
+    <Rule Id="CA5395" Action="Error" />
+    <Rule Id="CA5396" Action="Error" />
+    <Rule Id="CA5397" Action="Error" />
+    <Rule Id="CA5398" Action="Error" />
+    <Rule Id="CA5399" Action="Error" />
+    <Rule Id="CA5400" Action="Error" />
+    <Rule Id="CA5401" Action="Error" />
+    <Rule Id="CA5402" Action="Error" />
+    <Rule Id="CA5403" Action="Error" />
+
+    <!-- Performance rules -->
+    <Rule Id="CA1304" Action="Error" /> <!-- Specify CultureInfo -->
+    <Rule Id="CA1305" Action="Error" />
+    <Rule Id="CA1307" Action="Error" />
+    <Rule Id="CA1308" Action="Error" />
+    <Rule Id="CA1309" Action="Error" />
+    <Rule Id="CA1810" Action="Error" /> <!-- Static constructors -->
+    <Rule Id="CA1812" Action="Error" /> <!-- Avoid uninstantiated internal classes -->
+    <Rule Id="CA1813" Action="Error" />
+    <Rule Id="CA1814" Action="Error" />
+    <Rule Id="CA1815" Action="Error" />
+    <Rule Id="CA1816" Action="Error" />
+    <Rule Id="CA1819" Action="Error" />
+    <Rule Id="CA1820" Action="Error" />
+    <Rule Id="CA1821" Action="Error" />
+    <Rule Id="CA1822" Action="Error" />
+    <Rule Id="CA1823" Action="Error" />
+    <Rule Id="CA1824" Action="Error" />
+    <Rule Id="CA1825" Action="Error" />
+    <Rule Id="CA1826" Action="Error" />
+    <Rule Id="CA1827" Action="Error" />
+    <Rule Id="CA1828" Action="Error" />
+    <Rule Id="CA1829" Action="Error" />
+    <Rule Id="CA1830" Action="Error" />
+    <Rule Id="CA1831" Action="Error" />
+    <Rule Id="CA1832" Action="Error" />
+    <Rule Id="CA1833" Action="Error" />
+    <Rule Id="CA1834" Action="Error" />
+    <Rule Id="CA1835" Action="Error" />
+    <Rule Id="CA1836" Action="Error" />
+    <Rule Id="CA1837" Action="Error" />
+    <Rule Id="CA1838" Action="Error" />
+    <Rule Id="CA1839" Action="Error" />
+    <Rule Id="CA1840" Action="Error" />
+    <Rule Id="CA1841" Action="Error" />
+    <Rule Id="CA1842" Action="Error" />
+    <Rule Id="CA1843" Action="Error" />
+    <Rule Id="CA1844" Action="Error" />
+    <Rule Id="CA1845" Action="Error" />
+    <Rule Id="CA1846" Action="Error" />
+    <Rule Id="CA1847" Action="Error" />
+    <Rule Id="CA1848" Action="Error" />
+    <Rule Id="CA1849" Action="Error" />
+    <Rule Id="CA1850" Action="Error" />
+
+    <!-- Reliability and correctness -->
+    <Rule Id="CA2000" Action="Error" /> <!-- Dispose objects -->
+    <Rule Id="CA2002" Action="Error" />
+    <Rule Id="CA2007" Action="Error" /> <!-- ConfigureAwait -->
+    <Rule Id="CA2008" Action="Error" />
+    <Rule Id="CA2009" Action="Error" />
+    <Rule Id="CA2011" Action="Error" />
+    <Rule Id="CA2012" Action="Error" />
+    <Rule Id="CA2013" Action="Error" />
+    <Rule Id="CA2014" Action="Error" />
+    <Rule Id="CA2015" Action="Error" />
+    <Rule Id="CA2016" Action="Error" />
+    <Rule Id="CA2017" Action="Error" />
+    <Rule Id="CA2018" Action="Error" />
+    <Rule Id="CA2019" Action="Error" />
+    <Rule Id="CA2020" Action="Error" />
+
+    <!-- Maintainability -->
+    <Rule Id="CA1501" Action="Error" />
+    <Rule Id="CA1502" Action="Warning" /> <!-- Cyclomatic complexity - warning to allow some flexibility -->
+    <Rule Id="CA1505" Action="Error" />
+    <Rule Id="CA1506" Action="Warning" /> <!-- Class coupling - warning to allow some flexibility -->
+    <Rule Id="CA1507" Action="Error" />
+    <Rule Id="CA1508" Action="Error" />
+    <Rule Id="CA1509" Action="Error" />
+  </Rules>
+
+  <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
+    <!-- Naming rules -->
+    <Rule Id="SA1300" Action="Error" /> <!-- Element should begin with uppercase -->
+    <Rule Id="SA1301" Action="None" /> <!-- Element should begin with lowercase (conflicts with C# conventions) -->
+    <Rule Id="SA1302" Action="Error" />
+    <Rule Id="SA1303" Action="Error" />
+    <Rule Id="SA1304" Action="Error" />
+    <Rule Id="SA1305" Action="Error" />
+    <Rule Id="SA1306" Action="Error" />
+    <Rule Id="SA1307" Action="Error" />
+    <Rule Id="SA1308" Action="Error" />
+    <Rule Id="SA1309" Action="None" /> <!-- Field should not begin with underscore (we allow _camelCase for private fields) -->
+    <Rule Id="SA1310" Action="Error" />
+    <Rule Id="SA1311" Action="Error" />
+    <Rule Id="SA1312" Action="Error" />
+    <Rule Id="SA1313" Action="Error" />
+    <Rule Id="SA1314" Action="Error" />
+
+    <!-- Documentation rules - relaxed since not all code needs XML docs -->
+    <Rule Id="SA1600" Action="None" /> <!-- Elements should be documented -->
+    <Rule Id="SA1601" Action="None" />
+    <Rule Id="SA1602" Action="None" />
+    <Rule Id="SA1633" Action="None" /> <!-- File should have header -->
+
+    <!-- Layout rules -->
+    <Rule Id="SA1500" Action="Error" /> <!-- Braces for multi-line statements -->
+    <Rule Id="SA1501" Action="Error" />
+    <Rule Id="SA1502" Action="Error" />
+    <Rule Id="SA1503" Action="Error" />
+    <Rule Id="SA1504" Action="Error" />
+    <Rule Id="SA1505" Action="Error" />
+    <Rule Id="SA1506" Action="Error" />
+    <Rule Id="SA1507" Action="Error" />
+    <Rule Id="SA1508" Action="Error" />
+    <Rule Id="SA1509" Action="Error" />
+    <Rule Id="SA1510" Action="Error" />
+    <Rule Id="SA1511" Action="Error" />
+    <Rule Id="SA1512" Action="Error" />
+    <Rule Id="SA1513" Action="Error" />
+    <Rule Id="SA1514" Action="Error" />
+    <Rule Id="SA1515" Action="Error" />
+    <Rule Id="SA1516" Action="Error" />
+    <Rule Id="SA1517" Action="Error" />
+    <Rule Id="SA1518" Action="Error" />
+    <Rule Id="SA1519" Action="Error" />
+    <Rule Id="SA1520" Action="Error" />
+  </Rules>
+
+  <!-- Default severity for all other analyzers -->
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp" RuleNamespace="Microsoft.CodeAnalysis.CSharp">
+    <Rule Id="CS8600" Action="Error" /> <!-- Nullable reference types -->
+    <Rule Id="CS8601" Action="Error" />
+    <Rule Id="CS8602" Action="Error" />
+    <Rule Id="CS8603" Action="Error" />
+    <Rule Id="CS8604" Action="Error" />
+    <Rule Id="CS8618" Action="Error" />
+    <Rule Id="CS8625" Action="Error" />
+  </Rules>
+</RuleSet>
