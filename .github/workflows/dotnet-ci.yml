@@ -55,7 +55,17 @@ jobs:
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
+      - name: Check if coverage files exist
+        id: coverage_check
+        run: |
+          if compgen -G "coverage/**/coverage.cobertura.xml" > /dev/null; then
+            echo "has_coverage=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_coverage=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Generate coverage report
+        if: steps.coverage_check.outputs.has_coverage == 'true'
         run: |
           reportgenerator \
             -reports:"coverage/**/coverage.cobertura.xml" \
@@ -63,9 +73,11 @@ jobs:
             -reporttypes:"Html;TextSummary;Cobertura"
 
       - name: Display coverage summary
+        if: steps.coverage_check.outputs.has_coverage == 'true'
         run: cat coverage/report/Summary.txt
 
       - name: Check coverage threshold
+        if: steps.coverage_check.outputs.has_coverage == 'true'
         run: |
           # Extract line coverage percentage
           COVERAGE=$(grep -oP 'Line coverage: \K[0-9.]+' coverage/report/Summary.txt)
@@ -91,22 +103,32 @@ jobs:
 
           echo "✅ Coverage check passed: $COVERAGE% >= $THRESHOLD%"
 
+      - name: No tests warning
+        if: steps.coverage_check.outputs.has_coverage == 'false'
+        run: |
+          echo "⚠️  WARNING: No test coverage found"
+          echo ""
+          echo "No tests were found in this solution."
+          echo "All production code should have tests with 90%+ coverage."
+          echo ""
+          echo "If this is initial scaffolding, add tests before adding real functionality."
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: steps.coverage_check.outputs.has_coverage == 'true'
         with:
           name: coverage-report
           path: coverage/report/
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
-        if: always()
+        if: steps.coverage_check.outputs.has_coverage == 'true'
         with:
           name: test-results
           path: coverage/**/*.trx
 
       - name: Comment PR with coverage
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.coverage_check.outputs.has_coverage == 'true'
         uses: actions/github-script@v7
         with:
           script: |

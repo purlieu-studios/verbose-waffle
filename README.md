@@ -67,7 +67,6 @@ This is a monorepo containing multiple projects that work together:
 
 - **Game** (Godot): The main game client (`apps/game/`)
   - Godot-specific code and scene scripts
-  - Relaxed code analyzers (Godot has its own patterns)
 - **Game Logic** (C# Library): Shared game logic (`packages/game-logic/`)
   - Core game systems, ECS components, recipe logic
   - Strict code quality enforcement (analyzers, tests required)

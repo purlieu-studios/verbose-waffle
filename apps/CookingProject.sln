@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11018.127 d18.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CookingProject.Logic", "CookingProject.Logic\CookingProject.Logic.csproj", "{FD353E52-BE23-12D9-CC43-6685F4019CCD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CookingProject", "game\CookingProject.csproj", "{6E80D63F-266D-EE4E-6249-B65C15B8C6DB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FD353E52-BE23-12D9-CC43-6685F4019CCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD353E52-BE23-12D9-CC43-6685F4019CCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD353E52-BE23-12D9-CC43-6685F4019CCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD353E52-BE23-12D9-CC43-6685F4019CCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E80D63F-266D-EE4E-6249-B65C15B8C6DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E80D63F-266D-EE4E-6249-B65C15B8C6DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E80D63F-266D-EE4E-6249-B65C15B8C6DB}.Release|Any CPU.ActiveCfg = ExportDebug|Any CPU
+		{6E80D63F-266D-EE4E-6249-B65C15B8C6DB}.Release|Any CPU.Build.0 = ExportDebug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {10160A34-7AE3-4B2A-AD0D-4C884B85D8F9}
+	EndGlobalSection
+EndGlobal
