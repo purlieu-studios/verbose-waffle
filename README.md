@@ -65,9 +65,21 @@ cooking-project/
 
 This is a monorepo containing multiple projects that work together:
 
-- **Game** (Godot): The main game client
-- **Game Logic** (C# Library): Shared game logic used by both game and web
-- **Web** (ASP.NET): Backend services, APIs, and player accounts
+- **Game** (Godot): The main game client (`apps/game/`)
+  - Godot-specific code and scene scripts
+  - Relaxed code analyzers (Godot has its own patterns)
+- **Game Logic** (C# Library): Shared game logic (`packages/game-logic/`)
+  - Core game systems, ECS components, recipe logic
+  - Strict code quality enforcement (analyzers, tests required)
+  - Shared between game client and web backend
+- **Web** (ASP.NET): Backend services, APIs, player accounts (`apps/web/`)
+  - REST APIs, authentication, leaderboards
+  - Strict code quality enforcement
+
+**Where to put code:**
+- Godot-specific UI/scene code → `apps/game/`
+- Shared game logic (ECS, recipes, etc.) → `packages/game-logic/`
+- Backend/API code → `apps/web/`
 
 ### Quality Standards
 
