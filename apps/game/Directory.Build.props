@@ -1,0 +1,33 @@
+<Project>
+  <!--
+    Godot project override: Keep analyzers enabled but don't fail builds on warnings.
+
+    Godot has its own C# patterns (scripts without namespaces, generated code, etc.)
+    that conflict with some .NET analyzer rules. We want the quality feedback from
+    analyzers, but we don't want Godot-specific patterns to block builds.
+  -->
+
+  <PropertyGroup>
+    <!-- Keep analyzers enabled - they're helpful for catching real bugs -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- DON'T treat warnings as errors for Godot projects -->
+    <!-- This allows builds to succeed while still showing helpful warnings -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <!-- Keep nullable enabled for safety -->
+    <Nullable>enable</Nullable>
+
+    <!-- Use latest C# language features -->
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!--
+    StyleCop and other analyzers are INHERITED from root Directory.Build.props
+    and will still run. They'll show warnings but won't block builds.
+
+    If specific rules cause issues with Godot patterns, suppress them in
+    apps/game/.editorconfig rather than disabling all analyzers.
+  -->
+</Project>
