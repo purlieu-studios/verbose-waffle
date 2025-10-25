@@ -82,7 +82,7 @@ class VectorStore:
         data = f"{file_path}:{content}"
         return hashlib.sha256(data.encode()).hexdigest()
 
-    def add_chunks(self, chunks: List[Dict]) -> int:
+    def add_chunks(self, chunks: List[Dict], update_existing: bool = True) -> int:
         """
         Add code chunks to the vector store.
 
@@ -93,6 +93,8 @@ class VectorStore:
                 - file_path: str (full path)
                 - start_line: int (optional)
                 - end_line: int (optional)
+            update_existing: If True, removes old chunks from files before adding new ones.
+                           This ensures modified files don't create duplicates. (default: True)
 
         Returns:
             Number of chunks added
@@ -104,6 +106,13 @@ class VectorStore:
             raise ValueError("Chunks list cannot be empty")
 
         print(f"Processing {len(chunks)} chunks...")
+
+        # Group chunks by file_path for smart updates
+        if update_existing and self.table is not None:
+            files_to_update = set(chunk.get("file_path") for chunk in chunks)
+            for file_path in files_to_update:
+                if file_path:
+                    self.remove_chunks_by_file(file_path)
 
         # Prepare data for insertion
         records = []
@@ -142,28 +151,33 @@ class VectorStore:
         if self.table is None:
             self.table = self.db.create_table(self.table_name, data=records)
             print(f"Created table '{self.table_name}'")
+            return len(records)
         else:
-            # Remove duplicates based on chunk_hash
-            existing_hashes = set()
-            try:
-                for row in self.table.to_pandas()["chunk_hash"]:
-                    existing_hashes.add(row)
-            except Exception:
-                pass
-
-            new_records = [
-                r for r in records if r["chunk_hash"] not in existing_hashes
-            ]
-
-            if new_records:
-                self.table.add(new_records)
-                print(f"Added {len(new_records)} new chunks (skipped {len(records) - len(new_records)} duplicates)")
+            # If update_existing=True, we already removed old chunks, so just add new ones
+            if update_existing:
+                self.table.add(records)
+                print(f"Added {len(records)} new chunks")
+                return len(records)
             else:
-                print("All chunks already exist in database")
+                # Original behavior: deduplicate by hash
+                existing_hashes = set()
+                try:
+                    for row in self.table.to_pandas()["chunk_hash"]:
+                        existing_hashes.add(row)
+                except Exception:
+                    pass
 
-            return len(new_records)
+                new_records = [
+                    r for r in records if r["chunk_hash"] not in existing_hashes
+                ]
 
-        return len(records)
+                if new_records:
+                    self.table.add(new_records)
+                    print(f"Added {len(new_records)} new chunks (skipped {len(records) - len(new_records)} duplicates)")
+                else:
+                    print("All chunks already exist in database")
+
+                return len(new_records)
 
     def search(
         self,
@@ -219,6 +233,47 @@ class VectorStore:
             matches.append(match)
 
         return matches[:top_k]
+
+    def remove_chunks_by_file(self, file_path: str) -> int:
+        """
+        Remove all chunks from a specific file.
+
+        Args:
+            file_path: Path to the file whose chunks should be removed
+
+        Returns:
+            Number of chunks removed
+        """
+        if self.table is None:
+            return 0
+
+        try:
+            # Get current count
+            df = self.table.to_pandas()
+            before_count = len(df)
+
+            # Filter out chunks from this file
+            filtered_df = df[df["file_path"] != file_path]
+            removed_count = before_count - len(filtered_df)
+
+            if removed_count > 0:
+                # Drop and recreate table with filtered data
+                self.db.drop_table(self.table_name)
+                if len(filtered_df) > 0:
+                    self.table = self.db.create_table(
+                        self.table_name,
+                        data=filtered_df.to_dict("records"),
+                    )
+                else:
+                    self.table = None
+
+                print(f"  Removed {removed_count} old chunks from {file_path}")
+
+            return removed_count
+
+        except Exception as e:
+            print(f"  Warning: Could not remove chunks for {file_path}: {e}")
+            return 0
 
     def clear(self) -> None:
         """Clear all data from the vector store."""
