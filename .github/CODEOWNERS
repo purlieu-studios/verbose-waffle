@@ -1,0 +1,19 @@
+# Code quality and configuration files require approval from maintainers
+# This prevents accidental or intentional weakening of code standards
+
+# Core code quality enforcement files
+/CodeAnalysis.ruleset @purlieu-studios/maintainers
+/Directory.Build.props @purlieu-studios/maintainers
+/.editorconfig @purlieu-studios/maintainers
+/.gitattributes @purlieu-studios/maintainers
+
+# Documentation about rules
+/CODE_QUALITY_RULES.md @purlieu-studios/maintainers
+
+# CI/CD and automation
+/.github/ @purlieu-studios/maintainers
+
+# Note: To change code quality rules, you must:
+# 1. Have a documented reason in the PR description
+# 2. Get approval from @purlieu-studios/maintainers
+# 3. Update CODE_QUALITY_RULES.md with the rationale

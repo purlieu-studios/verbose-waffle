@@ -1,0 +1,154 @@
+name: Validate Code Quality Rules
+
+on:
+  pull_request:
+    paths:
+      - 'CodeAnalysis.ruleset'
+      - 'Directory.Build.props'
+      - '.editorconfig'
+      - '.github/workflows/validate-rules.yml'
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'CodeAnalysis.ruleset'
+      - 'Directory.Build.props'
+      - '.editorconfig'
+
+jobs:
+  validate-rules:
+    name: Ensure Rules Haven't Been Weakened
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine comparison branch
+        id: branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "base=${{ github.base_ref }}" >> $GITHUB_OUTPUT
+            echo "Using PR base: ${{ github.base_ref }}"
+          else
+            # For direct push, compare with previous commit
+            echo "base=HEAD~1" >> $GITHUB_OUTPUT
+            echo "Using previous commit: HEAD~1"
+          fi
+
+      - name: Check if ruleset changed
+        id: ruleset_changed
+        run: |
+          if git diff --name-only ${{ steps.branch.outputs.base }} HEAD | grep -q "CodeAnalysis.ruleset"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate CodeAnalysis.ruleset
+        if: steps.ruleset_changed.outputs.changed == 'true'
+        run: |
+          echo "⚠️  WARNING: CodeAnalysis.ruleset has been modified!"
+          echo ""
+          echo "Checking for weakened rules..."
+
+          # Count Error rules in base vs current
+          BASE_ERRORS=$(git show ${{ steps.branch.outputs.base }}:CodeAnalysis.ruleset | grep -c 'Action="Error"' || true)
+          CURRENT_ERRORS=$(grep -c 'Action="Error"' CodeAnalysis.ruleset || true)
+
+          echo "Base has $BASE_ERRORS rules set to Error"
+          echo "Current has $CURRENT_ERRORS rules set to Error"
+
+          if [ "$CURRENT_ERRORS" -lt "$BASE_ERRORS" ]; then
+            echo ""
+            echo "❌ FAILURE: Rules have been weakened!"
+            echo "   Number of Error rules decreased from $BASE_ERRORS to $CURRENT_ERRORS"
+            echo ""
+            echo "This PR appears to weaken code quality enforcement."
+            echo "Please read CODE_QUALITY_RULES.md for the proper process."
+            echo ""
+            echo "Ask yourself:"
+            echo "  1. Am I fixing the code or avoiding the fix?"
+            echo "  2. Have I documented the rationale in CODE_QUALITY_RULES.md?"
+            echo "  3. Has this been reviewed and approved?"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Rule count validation passed"
+          echo "   Note: This check only counts Error rules, not content changes."
+          echo "   Reviewers: Please manually verify no rules were inappropriately relaxed."
+
+      - name: Check if Directory.Build.props changed
+        id: buildprops_changed
+        run: |
+          if git diff --name-only ${{ steps.branch.outputs.base }} HEAD | grep -q "Directory.Build.props"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate Directory.Build.props
+        if: steps.buildprops_changed.outputs.changed == 'true'
+        run: |
+          echo "⚠️  WARNING: Directory.Build.props has been modified!"
+          echo ""
+
+          # Check if TreatWarningsAsErrors is still true
+          if ! grep -q "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>" Directory.Build.props; then
+            echo "❌ FAILURE: TreatWarningsAsErrors has been disabled or removed!"
+            echo ""
+            echo "This is a critical code quality protection."
+            echo "Disabling this allows warnings to be ignored instead of fixed."
+            echo ""
+            echo "Read CODE_QUALITY_RULES.md before proceeding."
+            exit 1
+          fi
+
+          # Check if analyzers are still enabled
+          if ! grep -q "<EnableNETAnalyzers>true</EnableNETAnalyzers>" Directory.Build.props; then
+            echo "❌ FAILURE: .NET analyzers have been disabled!"
+            exit 1
+          fi
+
+          if ! grep -q "<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>" Directory.Build.props; then
+            echo "❌ FAILURE: Code style enforcement has been disabled!"
+            exit 1
+          fi
+
+          echo "✅ Directory.Build.props critical settings intact"
+          echo "   Reviewers: Please manually verify changes are appropriate."
+
+      - name: Check for CODE_QUALITY_RULES.md update
+        if: |
+          steps.ruleset_changed.outputs.changed == 'true' ||
+          steps.buildprops_changed.outputs.changed == 'true'
+        run: |
+          if ! git diff --name-only ${{ steps.branch.outputs.base }} HEAD | grep -q "CODE_QUALITY_RULES.md"; then
+            echo "⚠️  WARNING: Code quality config changed but CODE_QUALITY_RULES.md not updated"
+            echo ""
+            echo "When changing code quality rules, you should document:"
+            echo "  - What changed"
+            echo "  - Why it changed"
+            echo "  - Who approved it"
+            echo ""
+            echo "Add an entry to the 'Rule Changes' section in CODE_QUALITY_RULES.md"
+            echo ""
+            echo "This is a warning, not a failure, but strongly recommended."
+          else
+            echo "✅ CODE_QUALITY_RULES.md has been updated"
+          fi
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  Code Quality Rule Validation Complete                   ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "Remember: Fix the code, not the rules!"
+          echo ""
+          echo "For more information, see CODE_QUALITY_RULES.md"
