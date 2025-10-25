@@ -250,12 +250,17 @@ class CodeIndexer:
             self.files_skipped += 1
             return []
 
-    def index(self, vector_store: VectorStore) -> None:
+    def index(
+        self,
+        vector_store: VectorStore,
+        remove_deleted: bool = True,
+    ) -> None:
         """
         Index all files in the root directory.
 
         Args:
             vector_store: VectorStore instance to add chunks to
+            remove_deleted: If True, removes chunks from files that no longer exist
         """
         print(f"\n{'='*60}")
         print(f"Indexing directory: {self.root_path}")
@@ -273,6 +278,10 @@ class CodeIndexer:
 
         print(f"Found {total_files} files to index\n")
 
+        # Detect and remove chunks from deleted files
+        if remove_deleted:
+            self._remove_deleted_files(vector_store, files)
+
         # Process each file
         all_chunks = []
         for i, file_path in enumerate(files, 1):
@@ -289,17 +298,65 @@ class CodeIndexer:
                 print(f"  - Skipped (no chunks)")
                 self.files_skipped += 1
 
-        # Add all chunks to vector store
+        # Add all chunks to vector store (smart update by default)
         if all_chunks:
             print(f"\n{'='*60}")
             print("Adding chunks to vector database...")
             print(f"{'='*60}\n")
 
-            added = vector_store.add_chunks(all_chunks)
+            added = vector_store.add_chunks(all_chunks, update_existing=True)
             self.total_chunks = added
 
         # Print summary
         self._print_summary()
+
+    def _remove_deleted_files(
+        self,
+        vector_store: VectorStore,
+        current_files: List[Path],
+    ) -> None:
+        """
+        Remove chunks from files that no longer exist.
+
+        Args:
+            vector_store: VectorStore instance
+            current_files: List of current file paths
+        """
+        # Get all file paths currently in the database
+        try:
+            stats = vector_store.get_stats()
+            if stats.get("total_chunks", 0) == 0:
+                return  # Nothing to clean up
+
+            # Get list of files in database that are within our root path
+            df = vector_store.table.to_pandas()
+            db_files = set(df["file_path"].unique())
+
+            # Convert current files to absolute paths as strings
+            current_file_paths = set(str(f.resolve()) for f in current_files)
+
+            # Find files that are in database but not on disk
+            # Only consider files under our root_path
+            root_str = str(self.root_path.resolve())
+            deleted_files = [
+                fp for fp in db_files
+                if fp.startswith(root_str) and fp not in current_file_paths
+            ]
+
+            if deleted_files:
+                print(f"\n{'='*60}")
+                print(f"Cleaning up {len(deleted_files)} deleted files...")
+                print(f"{'='*60}\n")
+
+                for file_path in deleted_files:
+                    rel_path = Path(file_path).relative_to(self.root_path)
+                    print(f"  Removing chunks from deleted file: {rel_path}")
+                    vector_store.remove_chunks_by_file(file_path)
+
+                print()
+
+        except Exception as e:
+            print(f"Warning: Could not check for deleted files: {e}\n")
 
     def _print_summary(self) -> None:
         """Print indexing summary."""
@@ -310,6 +367,76 @@ class CodeIndexer:
         print(f"Files skipped:       {self.files_skipped}")
         print(f"Total chunks added:  {self.total_chunks}")
         print(f"{'='*60}\n")
+
+
+def run_indexing(
+    directory: str,
+    db_path: str = "./lancedb",
+    clear: bool = False,
+) -> Dict:
+    """
+    Run the indexing process programmatically.
+
+    Args:
+        directory: Directory to index
+        db_path: Path to vector database
+        clear: Whether to clear existing database before indexing
+
+    Returns:
+        Dictionary with indexing results:
+        - success: bool
+        - files_processed: int
+        - files_skipped: int
+        - chunks_added: int
+        - total_chunks: int
+        - unique_files: int
+        - error: str (if success=False)
+
+    Raises:
+        ValueError: If directory is invalid
+    """
+    try:
+        # Initialize vector store
+        print("Initializing vector store...")
+        store = VectorStore(db_path=db_path)
+
+        # Clear if requested
+        if clear:
+            print("Clearing existing database...")
+            store.clear()
+
+        # Initialize indexer
+        indexer = CodeIndexer(directory)
+
+        # Run indexing
+        indexer.index(store)
+
+        # Get final stats
+        stats = store.get_stats()
+        print("Database Statistics:")
+        print(f"  Total chunks: {stats.get('total_chunks', 0)}")
+        print(f"  Unique files: {stats.get('unique_files', 0)}")
+        print(f"  Database: {stats.get('db_path', 'N/A')}")
+
+        return {
+            "success": True,
+            "files_processed": indexer.files_processed,
+            "files_skipped": indexer.files_skipped,
+            "chunks_added": indexer.total_chunks,
+            "total_chunks": stats.get("total_chunks", 0),
+            "unique_files": stats.get("unique_files", 0),
+        }
+
+    except ValueError as e:
+        return {
+            "success": False,
+            "error": str(e),
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}",
+        }
 
 
 def main():
@@ -345,38 +472,18 @@ Examples:
     args = parser.parse_args()
 
     try:
-        # Initialize vector store
-        print("Initializing vector store...")
-        store = VectorStore(db_path=args.db_path)
+        result = run_indexing(
+            directory=args.directory,
+            db_path=args.db_path,
+            clear=args.clear,
+        )
 
-        # Clear if requested
-        if args.clear:
-            print("Clearing existing database...")
-            store.clear()
+        if not result["success"]:
+            print(f"[ERROR] {result.get('error', 'Unknown error')}")
+            sys.exit(1)
 
-        # Initialize indexer
-        indexer = CodeIndexer(args.directory)
-
-        # Run indexing
-        indexer.index(store)
-
-        # Show final stats
-        stats = store.get_stats()
-        print("Database Statistics:")
-        print(f"  Total chunks: {stats.get('total_chunks', 0)}")
-        print(f"  Unique files: {stats.get('unique_files', 0)}")
-        print(f"  Database: {stats.get('db_path', 'N/A')}")
-
-    except ValueError as e:
-        print(f"[ERROR] {e}")
-        sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n[WARNING] Indexing interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        print(f"[ERROR] Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
         sys.exit(1)
 
 

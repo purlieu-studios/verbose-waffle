@@ -414,6 +414,13 @@ paket-files/
 **/__pycache__/
 *.pyc
 
+###############################################################################
+# MCP Code Search Tool
+###############################################################################
+
+# LanceDB vector database
+lancedb/
+
 # Cake - Uncomment if you are using it
 #tools/**
 #!tools/packages.config
