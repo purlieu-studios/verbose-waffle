@@ -1,0 +1,21 @@
+# RAG System Dependencies for Code Search
+
+# MCP Server Protocol
+mcp>=0.9.0
+
+# Vector Database
+lancedb>=0.3.0
+
+# Embeddings
+sentence-transformers>=2.2.0
+
+# Required by sentence-transformers
+torch>=2.0.0
+transformers>=4.30.0
+
+# Numerical operations
+numpy>=1.24.0
+
+# Data manipulation (used by lancedb)
+pandas>=2.0.0
+pyarrow>=12.0.0
