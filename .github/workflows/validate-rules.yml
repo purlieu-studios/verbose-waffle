@@ -1,0 +1,121 @@
+name: Validate Code Quality Rules
+
+on:
+  pull_request:
+    paths:
+      - 'CodeAnalysis.ruleset'
+      - 'Directory.Build.props'
+      - '.editorconfig'
+      - '.github/workflows/validate-rules.yml'
+
+jobs:
+  validate-rules:
+    name: Ensure Rules Haven't Been Weakened
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout base branch
+        run: |
+          git fetch origin ${{ github.base_ref }}
+
+      - name: Validate CodeAnalysis.ruleset
+        if: contains(github.event.pull_request.changed_files, 'CodeAnalysis.ruleset')
+        run: |
+          echo "⚠️  WARNING: CodeAnalysis.ruleset has been modified!"
+          echo ""
+          echo "Checking for weakened rules..."
+
+          # Count Error rules in base vs PR
+          BASE_ERRORS=$(git show origin/${{ github.base_ref }}:CodeAnalysis.ruleset | grep -c 'Action="Error"' || true)
+          PR_ERRORS=$(grep -c 'Action="Error"' CodeAnalysis.ruleset || true)
+
+          echo "Base branch has $BASE_ERRORS rules set to Error"
+          echo "PR branch has $PR_ERRORS rules set to Error"
+
+          if [ "$PR_ERRORS" -lt "$BASE_ERRORS" ]; then
+            echo ""
+            echo "❌ FAILURE: Rules have been weakened!"
+            echo "   Number of Error rules decreased from $BASE_ERRORS to $PR_ERRORS"
+            echo ""
+            echo "This PR appears to weaken code quality enforcement."
+            echo "Please read CODE_QUALITY_RULES.md for the proper process."
+            echo ""
+            echo "Ask yourself:"
+            echo "  1. Am I fixing the code or avoiding the fix?"
+            echo "  2. Have I documented the rationale in CODE_QUALITY_RULES.md?"
+            echo "  3. Has this been reviewed and approved?"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Rule count validation passed"
+          echo "   Note: This check only counts Error rules, not content changes."
+          echo "   Reviewers: Please manually verify no rules were inappropriately relaxed."
+
+      - name: Validate Directory.Build.props
+        if: contains(github.event.pull_request.changed_files, 'Directory.Build.props')
+        run: |
+          echo "⚠️  WARNING: Directory.Build.props has been modified!"
+          echo ""
+
+          # Check if TreatWarningsAsErrors is still true
+          if ! grep -q "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>" Directory.Build.props; then
+            echo "❌ FAILURE: TreatWarningsAsErrors has been disabled or removed!"
+            echo ""
+            echo "This is a critical code quality protection."
+            echo "Disabling this allows warnings to be ignored instead of fixed."
+            echo ""
+            echo "Read CODE_QUALITY_RULES.md before proceeding."
+            exit 1
+          fi
+
+          # Check if analyzers are still enabled
+          if ! grep -q "<EnableNETAnalyzers>true</EnableNETAnalyzers>" Directory.Build.props; then
+            echo "❌ FAILURE: .NET analyzers have been disabled!"
+            exit 1
+          fi
+
+          if ! grep -q "<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>" Directory.Build.props; then
+            echo "❌ FAILURE: Code style enforcement has been disabled!"
+            exit 1
+          fi
+
+          echo "✅ Directory.Build.props critical settings intact"
+          echo "   Reviewers: Please manually verify changes are appropriate."
+
+      - name: Check for CODE_QUALITY_RULES.md update
+        if: |
+          contains(github.event.pull_request.changed_files, 'CodeAnalysis.ruleset') ||
+          contains(github.event.pull_request.changed_files, 'Directory.Build.props') ||
+          contains(github.event.pull_request.changed_files, '.editorconfig')
+        run: |
+          if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "CODE_QUALITY_RULES.md"; then
+            echo "⚠️  WARNING: Code quality config changed but CODE_QUALITY_RULES.md not updated"
+            echo ""
+            echo "When changing code quality rules, you should document:"
+            echo "  - What changed"
+            echo "  - Why it changed"
+            echo "  - Who approved it"
+            echo ""
+            echo "Add an entry to the 'Rule Changes' section in CODE_QUALITY_RULES.md"
+            echo ""
+            echo "This is a warning, not a failure, but strongly recommended."
+          else
+            echo "✅ CODE_QUALITY_RULES.md has been updated"
+          fi
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "╔═══════════════════════════════════════════════════════════╗"
+          echo "║  Code Quality Rule Validation Complete                   ║"
+          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "Remember: Fix the code, not the rules!"
+          echo ""
+          echo "For more information, see CODE_QUALITY_RULES.md"
