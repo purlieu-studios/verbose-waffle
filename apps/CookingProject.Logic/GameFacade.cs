@@ -41,7 +41,6 @@ public class GameFacade
         }
 
         // Register systems in the order they should be updated
-        _systems.Add(new CookingSystem(_world, this));
         _systems.Add(new SharpeningSystem(_world, this));
 
         // Future systems can be added here:
@@ -84,18 +83,6 @@ public class GameFacade
 
         switch (command)
         {
-            case ChopIngredientCommand chopCmd:
-                HandleChopIngredient(chopCmd);
-                break;
-
-            case StartCookingCommand cookCmd:
-                HandleStartCooking(cookCmd);
-                break;
-
-            case AdjustHeatCommand heatCmd:
-                HandleAdjustHeat(heatCmd);
-                break;
-
             case StartSharpeningCommand sharpenCmd:
                 HandleStartSharpening(sharpenCmd);
                 break;
@@ -132,73 +119,19 @@ public class GameFacade
     }
 
     /// <summary>
-    /// Creates a test ingredient entity for demonstration purposes.
+    /// Creates a test knife entity for demonstration purposes.
     /// In a real game, this would be called from a system or initialization code.
     /// </summary>
-    /// <param name="name">The ingredient name.</param>
+    /// <param name="toolType">The tool type (e.g., "Chef's Knife").</param>
     /// <returns>The created entity.</returns>
-    public Entity CreateTestIngredient(string name)
+    public Entity CreateTestKnife(string toolType)
     {
         var entity = _world.Create(
-            new Ingredient { Name = name, IsChopped = false },
-            new Temperature { Current = 20f, Target = 100f, HeatLevel = 0f },
-            new CookingProgress { Progress = 0f, TimeCooked = 0f, RequiredTime = 30f, IsCooking = false }
+            new Tool { ToolType = toolType },
+            new Sharpness { Level = 0.5f, MaxLevel = 1.0f }
         );
 
         return entity;
-    }
-
-    private void HandleChopIngredient(ChopIngredientCommand command)
-    {
-        var entity = command.IngredientEntity;
-
-        if (!_world.IsAlive(entity))
-        {
-            return; // Entity doesn't exist
-        }
-
-        if (_world.Has<Ingredient>(entity))
-        {
-            ref var ingredient = ref _world.Get<Ingredient>(entity);
-            ingredient.IsChopped = true;
-
-            EmitEvent(new IngredientChoppedEvent(entity.Id, ingredient.Name));
-        }
-    }
-
-    private void HandleStartCooking(StartCookingCommand command)
-    {
-        var entity = command.RecipeEntity;
-
-        if (!_world.IsAlive(entity))
-        {
-            return;
-        }
-
-        if (_world.Has<CookingProgress>(entity) && _world.Has<Temperature>(entity))
-        {
-            ref var progress = ref _world.Get<CookingProgress>(entity);
-            ref var temp = ref _world.Get<Temperature>(entity);
-
-            progress.IsCooking = true;
-            temp.HeatLevel = command.HeatLevel;
-        }
-    }
-
-    private void HandleAdjustHeat(AdjustHeatCommand command)
-    {
-        var entity = command.Entity;
-
-        if (!_world.IsAlive(entity))
-        {
-            return;
-        }
-
-        if (_world.Has<Temperature>(entity))
-        {
-            ref var temp = ref _world.Get<Temperature>(entity);
-            temp.HeatLevel = Math.Clamp(command.HeatLevel, 0f, 1f);
-        }
     }
 
     private void HandleStartSharpening(StartSharpeningCommand command)

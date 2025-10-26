@@ -14,9 +14,8 @@ public partial class GameController : Node
 {
     private GameFacade? _gameFacade;
 
-    // Test ingredient entities (in a real game, these would be tracked properly)
-    private Entity _testTomato;
-    private Entity _testOnion;
+    // Test knife entity (in a real game, this would be tracked properly)
+    private Entity _testKnife;
 
     public override void _Ready()
     {
@@ -26,11 +25,10 @@ public partial class GameController : Node
         _gameFacade = new GameFacade();
         _gameFacade.Initialize();
 
-        // Create some test ingredients for demonstration
-        _testTomato = _gameFacade.CreateTestIngredient("Tomato");
-        _testOnion = _gameFacade.CreateTestIngredient("Onion");
+        // Create a test knife for demonstration
+        _testKnife = _gameFacade.CreateTestKnife("Chef's Knife");
 
-        GD.Print($"Created test ingredients: Tomato={_testTomato.Id}, Onion={_testOnion.Id}");
+        GD.Print($"Created test knife: Chef's Knife (Entity {_testKnife.Id})");
         GD.Print("Game Controller initialized!");
     }
 
@@ -60,35 +58,40 @@ public partial class GameController : Node
     {
         switch (evt)
         {
-            case IngredientChoppedEvent chopEvent:
-                GD.Print($"Ingredient chopped: {chopEvent.IngredientName} (Entity {chopEvent.EntityId})");
+            case SharpeningStartedEvent startEvent:
+                GD.Print($"Sharpening started on knife (Entity {startEvent.EntityId}), duration: {startEvent.Duration}s");
                 // In a real game:
-                // - Play chopping animation
-                // - Play chopping sound
-                // - Update UI to show ingredient is chopped
+                // - Play sharpening animation
+                // - Play sharpening sound
+                // - Show progress bar
                 break;
 
-            case CookingProgressEvent progressEvent:
+            case SharpeningProgressEvent progressEvent:
                 // Update progress bar UI
-                // GD.Print($"Cooking progress: {progressEvent.Progress:P0} at {progressEvent.Temperature:F1}°");
+                GD.Print($"Sharpening progress: {progressEvent.Progress:P0}");
                 break;
 
-            case IngredientBurnedEvent burnEvent:
-                GD.Print($"WARNING: {burnEvent.IngredientName} burned! (Entity {burnEvent.EntityId})");
+            case KnifeSharpenedEvent sharpenedEvent:
+                GD.Print($"Knife sharpened! (Entity {sharpenedEvent.EntityId}), new sharpness: {sharpenedEvent.FinalSharpness:F2}");
                 // In a real game:
-                // - Play burning animation
-                // - Play burning sound
-                // - Show "BURNED!" popup
-                // - Update ingredient visual to show burned state
+                // - Play completion sound
+                // - Show success animation
+                // - Update knife visual to show sharpness
                 break;
 
-            case RecipeCompletedEvent recipeEvent:
-                GD.Print($"Recipe completed: {recipeEvent.RecipeName} - Score: {recipeEvent.Score}");
+            case SharpeningCancelledEvent cancelEvent:
+                GD.Print($"Sharpening cancelled (Entity {cancelEvent.EntityId}) at {cancelEvent.PartialProgress:P0}");
                 // In a real game:
-                // - Show success popup
-                // - Update score UI
-                // - Play success sound/animation
-                // - Award points/achievements
+                // - Stop animation
+                // - Hide progress bar
+                // - Play cancel sound
+                break;
+
+            case KnifeDegradedEvent degradeEvent:
+                GD.Print($"Knife degraded (Entity {degradeEvent.EntityId}), new sharpness: {degradeEvent.NewSharpness:F2}");
+                // In a real game:
+                // - Update sharpness indicator
+                // - Play dulling sound if appropriate
                 break;
 
             default:
@@ -98,46 +101,32 @@ public partial class GameController : Node
     }
 
     /// <summary>
-    /// Example: Called when player clicks on an ingredient to chop it.
+    /// Example: Called when player clicks on whetstone to start sharpening.
     /// This demonstrates sending a command from Godot to ECS.
     /// </summary>
-    public void OnIngredientClicked(Entity ingredientEntity)
+    public void OnStartSharpening(Entity knifeEntity, float duration = 5.0f)
     {
         if (_gameFacade == null)
         {
             return;
         }
 
-        GD.Print($"Player clicked ingredient {ingredientEntity.Id}");
-        _gameFacade.ProcessCommand(new ChopIngredientCommand(ingredientEntity));
+        GD.Print($"Player started sharpening knife {knifeEntity.Id}");
+        _gameFacade.ProcessCommand(new StartSharpeningCommand(knifeEntity, duration));
     }
 
     /// <summary>
-    /// Example: Called when player starts cooking a recipe.
+    /// Example: Called when player cancels sharpening.
     /// </summary>
-    public void OnStartCooking(Entity recipeEntity, float heatLevel = 0.8f)
+    public void OnCancelSharpening(Entity knifeEntity)
     {
         if (_gameFacade == null)
         {
             return;
         }
 
-        GD.Print($"Starting to cook recipe {recipeEntity.Id} at heat level {heatLevel:P0}");
-        _gameFacade.ProcessCommand(new StartCookingCommand(recipeEntity, heatLevel));
-    }
-
-    /// <summary>
-    /// Example: Called when player adjusts stove temperature.
-    /// </summary>
-    public void OnHeatAdjusted(Entity stoveEntity, float newHeatLevel)
-    {
-        if (_gameFacade == null)
-        {
-            return;
-        }
-
-        GD.Print($"Adjusting heat for entity {stoveEntity.Id} to {newHeatLevel:P0}");
-        _gameFacade.ProcessCommand(new AdjustHeatCommand(stoveEntity, newHeatLevel));
+        GD.Print($"Player cancelled sharpening knife {knifeEntity.Id}");
+        _gameFacade.ProcessCommand(new CancelSharpeningCommand(knifeEntity));
     }
 
     /// <summary>
@@ -156,33 +145,18 @@ public partial class GameController : Node
             switch (keyEvent.Keycode)
             {
                 case Key.Key1:
-                    // Chop tomato
-                    OnIngredientClicked(_testTomato);
+                    // Start sharpening with default duration (5 seconds)
+                    OnStartSharpening(_testKnife);
                     break;
 
                 case Key.Key2:
-                    // Chop onion
-                    OnIngredientClicked(_testOnion);
+                    // Start sharpening with fast duration (3 seconds)
+                    OnStartSharpening(_testKnife, 3.0f);
                     break;
 
                 case Key.Key3:
-                    // Start cooking tomato at medium heat
-                    OnStartCooking(_testTomato, 0.5f);
-                    break;
-
-                case Key.Key4:
-                    // Start cooking tomato at high heat (will burn!)
-                    OnStartCooking(_testTomato, 1.0f);
-                    break;
-
-                case Key.Key5:
-                    // Reduce heat
-                    OnHeatAdjusted(_testTomato, 0.3f);
-                    break;
-
-                case Key.Key6:
-                    // Increase heat
-                    OnHeatAdjusted(_testTomato, 0.9f);
+                    // Cancel sharpening
+                    OnCancelSharpening(_testKnife);
                     break;
 
                 default:
