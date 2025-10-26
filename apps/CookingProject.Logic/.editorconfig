@@ -1,0 +1,25 @@
+# EditorConfig for CookingProject.Logic
+# Suppress some analyzer rules that don't apply well to ECS patterns
+
+root = false
+
+[*.cs]
+# Empty interfaces are acceptable for marker interfaces (IGameCommand, IGameEvent)
+dotnet_diagnostic.CA1040.severity = none
+
+# ECS components use public fields for performance (direct memory access)
+dotnet_diagnostic.CA1051.severity = none
+
+# ECS components don't need equality operators (they're just data bags)
+dotnet_diagnostic.CA1815.severity = none
+
+# List<T> is acceptable for event consumption
+dotnet_diagnostic.CA1002.severity = none
+
+# Commands are already validated by type system (non-nullable)
+dotnet_diagnostic.CA1062.severity = suggestion
+
+# Arch.Core.World is not CLS-compliant but we need to use it
+dotnet_diagnostic.CS3001.severity = none
+dotnet_diagnostic.CS3002.severity = none
+dotnet_diagnostic.CS3003.severity = none
