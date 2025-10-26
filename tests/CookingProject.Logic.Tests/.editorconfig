@@ -1,0 +1,23 @@
+root = false
+
+[*.cs]
+# Test projects have different standards
+# Allow simpler Dispose patterns in tests
+dotnet_diagnostic.CA1063.severity = none
+dotnet_diagnostic.CA1816.severity = none
+
+# CLSCompliant not needed for test assemblies
+dotnet_diagnostic.CA1014.severity = none
+
+# Documentation not required for tests
+dotnet_diagnostic.CS1591.severity = none
+dotnet_diagnostic.EnableGenerateDocumentationFile.severity = none
+
+# Namespace style - use file-scoped
+dotnet_diagnostic.IDE0160.severity = none
+
+# Allow unused usings in tests (IDE0005)
+dotnet_diagnostic.IDE0005.severity = suggestion
+
+# Allow underscores in test method names for readability (CA1707)
+dotnet_diagnostic.CA1707.severity = none
