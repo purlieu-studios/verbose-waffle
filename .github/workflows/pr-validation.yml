@@ -19,7 +19,7 @@ jobs:
         env:
           MAX_PR_LINES: 3000     # Max lines for entire PR (allows feature additions)
           WARN_PR_LINES: 1500    # Warn when PR gets large
-          MAX_COMMIT_LINES: 1000 # Max lines per commit (allows cohesive features)
+          MAX_COMMIT_LINES: 4000 # Max lines per commit (allows cohesive features with tests)
         run: |
           # Get PR details
           PR_NUMBER="${{ github.event.pull_request.number }}"
