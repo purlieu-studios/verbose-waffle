@@ -2,8 +2,8 @@
   "mcpServers": {
     "code-search": {
       "command": "python",
-      "args": ["C:\\Users\\purli\\source\\cooking-project\\tools\\code-search\\rag_server.py"],
-      "cwd": "C:\\Users\\purli\\source\\cooking-project"
+      "args": ["C:\\verbose-waffle\\tools\\code-search\\rag_server.py"],
+      "cwd": "C:\\verbose-waffle"
     }
   }
 }

@@ -29,8 +29,7 @@
 
   <!-- NuGet package references for code analyzers -->
   <ItemGroup>
-    <!-- Use built-in .NET analyzers - modern, actively maintained, no compatibility issues -->
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.*" PrivateAssets="all" />
+    <!-- .NET SDK 10+ includes built-in analyzers - no explicit package reference needed -->
     <!-- StyleCop.Analyzers removed - last stable release was 2019, use .editorconfig + built-in analyzers instead -->
   </ItemGroup>
 
