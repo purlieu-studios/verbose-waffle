@@ -4,6 +4,13 @@
       "command": "python",
       "args": ["C:\\verbose-waffle\\tools\\code-search\\rag_server.py"],
       "cwd": "C:\\verbose-waffle"
+    },
+    "godot-mcp": {
+      "command": "node",
+      "args": ["C:\\verbose-waffle\\tools\\godot-mcp\\server\\dist\\index.js"],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
     }
   }
 }
