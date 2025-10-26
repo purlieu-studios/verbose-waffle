@@ -18,3 +18,6 @@ dotnet_diagnostic.IDE0160.severity = none
 
 # Allow unused usings in tests (IDE0005)
 dotnet_diagnostic.IDE0005.severity = suggestion
+
+# Allow underscores in test method names for readability (CA1707)
+dotnet_diagnostic.CA1707.severity = none
