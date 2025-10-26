@@ -3,6 +3,10 @@ using CookingProject.Logic.Core.Commands;
 using CookingProject.Logic.Core.Components;
 using CookingProject.Logic.Core.Events;
 using CookingProject.Logic.Core.Systems;
+using CookingProject.Logic.Features.Cooking;
+using CookingProject.Logic.Features.Cooking.Commands;
+using CookingProject.Logic.Features.Cooking.Components;
+using CookingProject.Logic.Features.Cooking.Events;
 using CookingProject.Logic.Features.Sharpening;
 using CookingProject.Logic.Features.Sharpening.Commands;
 using CookingProject.Logic.Features.Sharpening.Components;
@@ -15,7 +19,7 @@ namespace CookingProject.Logic;
 /// Godot sends commands via ProcessCommand(), receives events via ConsumeEvents(),
 /// and drives the simulation via Update().
 /// </summary>
-public class GameFacade
+public partial class GameFacade
 {
     private readonly World _world;
     private readonly List<IGameSystem> _systems;
@@ -46,6 +50,7 @@ public class GameFacade
 
         // Register systems in the order they should be updated
         _systems.Add(new SharpeningSystem(_world, this));
+        _systems.Add(new CookingSystem(_world, this));
 
         // Future systems can be added here:
         // _systems.Add(new RecipeSystem(_world, this));
@@ -72,35 +77,6 @@ public class GameFacade
     }
 
     /// <summary>
-    /// Processes a command from Godot (player input/intent).
-    /// Commands are routed to the appropriate systems or entities.
-    /// </summary>
-    /// <param name="command">The command to process.</param>
-    public void ProcessCommand(IGameCommand command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-
-        if (!_isInitialized)
-        {
-            throw new InvalidOperationException("GameFacade must be initialized before ProcessCommand()");
-        }
-
-        switch (command)
-        {
-            case StartSharpeningCommand sharpenCmd:
-                HandleStartSharpening(sharpenCmd);
-                break;
-
-            case CancelSharpeningCommand cancelCmd:
-                HandleCancelSharpening(cancelCmd);
-                break;
-
-            default:
-                throw new NotSupportedException($"Command type {command.GetType().Name} is not supported");
-        }
-    }
-
-    /// <summary>
     /// Consumes all pending events. Godot should call this each frame after Update()
     /// to retrieve state changes and update the UI accordingly.
     /// </summary>
@@ -120,77 +96,6 @@ public class GameFacade
     internal void EmitEvent(IGameEvent gameEvent)
     {
         _eventQueue.Enqueue(gameEvent);
-    }
-
-    /// <summary>
-    /// Creates a test knife entity for demonstration purposes.
-    /// In a real game, this would be called from a system or initialization code.
-    /// </summary>
-    /// <param name="toolType">The tool type (e.g., "Chef's Knife").</param>
-    /// <returns>The created entity.</returns>
-    public Entity CreateTestKnife(string toolType)
-    {
-        var entity = _world.Create(
-            new Tool { ToolType = toolType },
-            new Sharpness { Level = 0.5f, MaxLevel = 1.0f }
-        );
-
-        return entity;
-    }
-
-    private void HandleStartSharpening(StartSharpeningCommand command)
-    {
-        var entity = command.KnifeEntity;
-
-        if (!_world.IsAlive(entity))
-        {
-            return; // Entity doesn't exist
-        }
-
-        if (!_world.Has<Sharpness>(entity))
-        {
-            return; // Entity doesn't have Sharpness component
-        }
-
-        // Don't start if already sharpening
-        if (_world.Has<SharpeningProgress>(entity))
-        {
-            return;
-        }
-
-        // Capture current sharpness level before starting
-        ref var sharpness = ref _world.Get<Sharpness>(entity);
-
-        // Add SharpeningProgress component to begin sharpening
-        _world.Add(entity, new SharpeningProgress
-        {
-            InitialLevel = sharpness.Level,
-            ElapsedTime = 0f,
-            Duration = command.Duration
-        });
-
-        EmitEvent(new SharpeningStartedEvent(entity.Id, command.Duration));
-    }
-
-    private void HandleCancelSharpening(CancelSharpeningCommand command)
-    {
-        var entity = command.KnifeEntity;
-
-        if (!_world.IsAlive(entity))
-        {
-            return;
-        }
-
-        if (_world.Has<SharpeningProgress>(entity))
-        {
-            ref var progress = ref _world.Get<SharpeningProgress>(entity);
-            float partialProgress = progress.ElapsedTime / progress.Duration;
-
-            // Remove SharpeningProgress component (cancel sharpening)
-            _world.Remove<SharpeningProgress>(entity);
-
-            EmitEvent(new SharpeningCancelledEvent(entity.Id, partialProgress));
-        }
     }
 
     /// <summary>

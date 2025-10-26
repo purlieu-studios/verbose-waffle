@@ -1,28 +1,26 @@
-# EditorConfig for CookingProject.Logic
-# Suppress some analyzer rules that don't apply well to ECS patterns
-
 root = false
 
 [*.cs]
-# Empty interfaces are acceptable for marker interfaces (IGameCommand, IGameEvent)
-dotnet_diagnostic.CA1040.severity = none
+# Test projects have different standards
+# Allow simpler Dispose patterns in tests
+dotnet_diagnostic.CA1063.severity = none
+dotnet_diagnostic.CA1816.severity = none
 
-# ECS components use public fields for performance (direct memory access)
-dotnet_diagnostic.CA1051.severity = none
+# CLSCompliant not needed for test assemblies
+dotnet_diagnostic.CA1014.severity = none
 
-# ECS components don't need equality operators (they're just data bags)
-dotnet_diagnostic.CA1815.severity = none
+# Documentation not required for tests
+dotnet_diagnostic.CS1591.severity = none
+dotnet_diagnostic.EnableGenerateDocumentationFile.severity = none
 
-# List<T> is acceptable for event consumption
-dotnet_diagnostic.CA1002.severity = none
+# Namespace style - use file-scoped
+dotnet_diagnostic.IDE0160.severity = none
 
-# Commands are already validated by type system (non-nullable)
-dotnet_diagnostic.CA1062.severity = suggestion
+# Allow unused usings in tests (IDE0005)
+dotnet_diagnostic.IDE0005.severity = suggestion
 
-# Arch.Core.World is not CLS-compliant but we need to use it
-dotnet_diagnostic.CS3001.severity = none
-dotnet_diagnostic.CS3002.severity = none
-dotnet_diagnostic.CS3003.severity = none
+# Allow underscores in test method names for readability (CA1707)
+dotnet_diagnostic.CA1707.severity = none
 csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:suggestion
 csharp_prefer_simple_using_statement = false:none
@@ -32,6 +30,14 @@ csharp_style_prefer_method_group_conversion = true:silent
 csharp_style_prefer_top_level_statements = true:silent
 csharp_style_prefer_primary_constructors = true:suggestion
 csharp_prefer_system_threading_lock = true:suggestion
+csharp_style_expression_bodied_methods = true:silent
+csharp_style_expression_bodied_constructors = true:silent
+csharp_style_expression_bodied_operators = true:silent
+csharp_style_expression_bodied_properties = true:silent
+csharp_style_expression_bodied_indexers = true:silent
+csharp_style_expression_bodied_accessors = true:silent
+csharp_style_expression_bodied_lambdas = true:silent
+csharp_style_expression_bodied_local_functions = true:silent
 
 [*.{cs,vb}]
 #### Naming styles ####
@@ -84,3 +90,9 @@ dotnet_style_operator_placement_when_wrapping = beginning_of_line
 tab_width = 4
 indent_size = 4
 end_of_line = crlf
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
