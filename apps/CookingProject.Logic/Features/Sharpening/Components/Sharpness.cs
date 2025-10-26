@@ -1,4 +1,4 @@
-namespace CookingProject.Logic.Components;
+namespace CookingProject.Logic.Features.Sharpening.Components;
 
 /// <summary>
 /// Component tracking knife sharpness level.

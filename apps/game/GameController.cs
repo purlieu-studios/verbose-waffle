@@ -1,8 +1,9 @@
 using Arch.Core;
 using Godot;
 using CookingProject.Logic;
-using CookingProject.Logic.Commands;
-using CookingProject.Logic.Events;
+using CookingProject.Logic.Core.Events;
+using CookingProject.Logic.Features.Sharpening.Commands;
+using CookingProject.Logic.Features.Sharpening.Events;
 
 namespace CookingProject;
 

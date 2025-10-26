@@ -1,4 +1,5 @@
-namespace CookingProject.Logic.Events;
+using CookingProject.Logic.Core.Events;
+namespace CookingProject.Logic.Features.Sharpening.Events;
 
 /// <summary>
 /// Event fired when player cancels sharpening mid-process.

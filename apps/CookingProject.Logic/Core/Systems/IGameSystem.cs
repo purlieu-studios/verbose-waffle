@@ -1,4 +1,4 @@
-namespace CookingProject.Logic.Systems;
+namespace CookingProject.Logic.Core.Systems;
 
 /// <summary>
 /// Base interface for all game systems.

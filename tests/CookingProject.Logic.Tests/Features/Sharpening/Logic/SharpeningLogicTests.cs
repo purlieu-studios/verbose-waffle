@@ -1,8 +1,8 @@
-using CookingProject.Logic.Logic;
+using CookingProject.Logic.Features.Sharpening.Logic;
 using FluentAssertions;
 using Xunit;
 
-namespace CookingProject.Logic.Tests.Logic;
+namespace CookingProject.Logic.Tests.Features.Sharpening.Logic;
 
 /// <summary>
 /// Tests for pure sharpening business logic with no ECS dependencies.

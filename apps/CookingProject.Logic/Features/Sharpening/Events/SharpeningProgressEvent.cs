@@ -1,4 +1,5 @@
-namespace CookingProject.Logic.Events;
+using CookingProject.Logic.Core.Events;
+namespace CookingProject.Logic.Features.Sharpening.Events;
 
 /// <summary>
 /// Event fired every frame during sharpening to update UI.

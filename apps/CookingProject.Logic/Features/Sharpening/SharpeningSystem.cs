@@ -1,10 +1,11 @@
 using Arch.Core;
 using Arch.Core.Extensions;
-using CookingProject.Logic.Components;
-using CookingProject.Logic.Events;
-using CookingProject.Logic.Logic;
+using CookingProject.Logic.Core.Systems;
+using CookingProject.Logic.Features.Sharpening.Components;
+using CookingProject.Logic.Features.Sharpening.Events;
+using CookingProject.Logic.Features.Sharpening.Logic;
 
-namespace CookingProject.Logic.Systems;
+namespace CookingProject.Logic.Features.Sharpening;
 
 /// <summary>
 /// ECS system that orchestrates knife sharpening by calling pure business logic.

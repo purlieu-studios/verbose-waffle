@@ -1,4 +1,4 @@
-namespace CookingProject.Logic.Commands;
+namespace CookingProject.Logic.Core.Commands;
 
 /// <summary>
 /// Base interface for all game commands sent from Godot to the ECS backend.

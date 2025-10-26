@@ -1,8 +1,12 @@
 using Arch.Core;
-using CookingProject.Logic.Commands;
-using CookingProject.Logic.Components;
-using CookingProject.Logic.Events;
-using CookingProject.Logic.Systems;
+using CookingProject.Logic.Core.Commands;
+using CookingProject.Logic.Core.Components;
+using CookingProject.Logic.Core.Events;
+using CookingProject.Logic.Core.Systems;
+using CookingProject.Logic.Features.Sharpening;
+using CookingProject.Logic.Features.Sharpening.Commands;
+using CookingProject.Logic.Features.Sharpening.Components;
+using CookingProject.Logic.Features.Sharpening.Events;
 
 namespace CookingProject.Logic;
 

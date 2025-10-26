@@ -1,4 +1,4 @@
-namespace CookingProject.Logic.Logic;
+namespace CookingProject.Logic.Features.Sharpening.Logic;
 
 /// <summary>
 /// Pure business logic for knife sharpening with no ECS dependencies.

@@ -1,6 +1,7 @@
 using Arch.Core;
+using CookingProject.Logic.Core.Commands;
 
-namespace CookingProject.Logic.Commands;
+namespace CookingProject.Logic.Features.Sharpening.Commands;
 
 /// <summary>
 /// Command to cancel active sharpening.

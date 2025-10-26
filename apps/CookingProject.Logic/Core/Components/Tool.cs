@@ -1,4 +1,4 @@
-namespace CookingProject.Logic.Components;
+namespace CookingProject.Logic.Core.Components;
 
 /// <summary>
 /// Tag component identifying an entity as a tool (knife, press, etc.).

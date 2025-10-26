@@ -1,4 +1,4 @@
-namespace CookingProject.Logic.Events;
+namespace CookingProject.Logic.Core.Events;
 
 /// <summary>
 /// Base interface for all game events sent from the ECS backend to Godot.
