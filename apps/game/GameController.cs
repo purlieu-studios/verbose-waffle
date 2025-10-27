@@ -66,6 +66,9 @@ public partial class GameController : Node
         }
     }
 
+    private int _frameCounter;
+    private const int DebugWriteInterval = 60; // Write debug files every 60 frames (~1 second at 60 FPS)
+
     public override void _Ready()
     {
         DebugLogger.Log("Initializing Game Controller...");
@@ -73,6 +76,12 @@ public partial class GameController : Node
         // Create and initialize the game facade
         _gameFacade = new GameFacade();
         _gameFacade.Initialize();
+
+#if DEBUG
+        // Enable debug systems
+        _gameFacade.EnableDebug();
+        DebugLogger.Log("Debug systems enabled");
+#endif
 
         // Create a test knife for demonstration
         _testKnife = _gameFacade.CreateTestKnife("Chef's Knife");
@@ -113,6 +122,16 @@ public partial class GameController : Node
         {
             HandleGameEvent(evt);
         }
+
+#if DEBUG
+        // Periodically write debug data to JSON files
+        _frameCounter++;
+        if (_frameCounter >= DebugWriteInterval)
+        {
+            WriteDebugFiles();
+            _frameCounter = 0;
+        }
+#endif
     }
 
     /// <summary>
@@ -280,8 +299,47 @@ public partial class GameController : Node
 
     public override void _ExitTree()
     {
+#if DEBUG
+        // Write final debug snapshot before exiting
+        WriteDebugFiles();
+#endif
+
         // Clean up when game ends
         _gameFacade?.Dispose();
         DebugLogger.Log("Game Controller disposed");
     }
+
+#if DEBUG
+    /// <summary>
+    /// Write debug data to JSON files for Claude to read.
+    /// </summary>
+    private void WriteDebugFiles()
+    {
+        if (_gameFacade?.IsDebugEnabled != true)
+        {
+            return;
+        }
+
+        // Write performance data
+        if (_gameFacade.Profiler != null)
+        {
+            var perfJson = _gameFacade.Profiler.ExportJson(frameCount: 60);
+            DebugLogger.WriteJsonFile("performance.json", perfJson);
+        }
+
+        // Write event/command log
+        if (_gameFacade.EventLogger != null)
+        {
+            var eventsJson = _gameFacade.EventLogger.ExportJson(maxEntries: 100);
+            DebugLogger.WriteJsonFile("events.json", eventsJson);
+        }
+
+        // Write ECS state snapshot
+        if (_gameFacade.Inspector != null)
+        {
+            var stateJson = _gameFacade.Inspector.ExportWorldSnapshot();
+            DebugLogger.WriteJsonFile("ecs_state.json", stateJson);
+        }
+    }
+#endif
 }

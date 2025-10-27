@@ -72,10 +72,31 @@ public partial class GameFacade
             throw new InvalidOperationException("GameFacade must be initialized before Update()");
         }
 
+#if DEBUG
+        _profiler?.StartFrame();
+#endif
+
         foreach (var system in _systems)
         {
+#if DEBUG
+            if (_profiler != null)
+            {
+                // Count entities this system will process
+                int entityCount = 0;
+                _profiler.StartSystem(system.GetType().Name, entityCount);
+            }
+#endif
+
             system.Update(deltaTime);
+
+#if DEBUG
+            _profiler?.EndSystem();
+#endif
         }
+
+#if DEBUG
+        _profiler?.EndFrame();
+#endif
     }
 
     /// <summary>
@@ -103,6 +124,9 @@ public partial class GameFacade
     /// <param name="gameEvent">The event to emit.</param>
     internal void EmitEvent(IGameEvent gameEvent)
     {
+#if DEBUG
+        _eventLogger?.LogEvent(gameEvent);
+#endif
         _eventQueue.Enqueue(gameEvent);
     }
 

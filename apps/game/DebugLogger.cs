@@ -191,4 +191,27 @@ public partial class DebugLogger : Node
     {
         return _instance?._logPath ?? "";
     }
+
+    /// <summary>
+    /// Write JSON data to a file. Used for debug system outputs.
+    /// </summary>
+    public static void WriteJsonFile(string filename, string jsonContent)
+    {
+        if (_instance == null)
+        {
+            return;
+        }
+
+        var projectRoot = ProjectSettings.GlobalizePath("res://");
+        var filePath = Path.Combine(projectRoot, filename);
+
+        try
+        {
+            File.WriteAllText(filePath, jsonContent);
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"Failed to write JSON file {filename}: {ex.Message}");
+        }
+    }
 }
