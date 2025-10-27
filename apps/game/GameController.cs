@@ -2,8 +2,11 @@ using Arch.Core;
 using Godot;
 using CookingProject.Logic;
 using CookingProject.Logic.Core.Events;
+using CookingProject.Logic.Features.Movement.Commands;
+using CookingProject.Logic.Features.Movement.Components;
 using CookingProject.Logic.Features.Sharpening.Commands;
 using CookingProject.Logic.Features.Sharpening.Events;
+using LogicVector2 = CookingProject.Logic.Core.Math.Vector2;
 
 namespace CookingProject;
 
@@ -15,12 +18,57 @@ public partial class GameController : Node
 {
     private GameFacade? _gameFacade;
 
-    // Test knife entity (in a real game, this would be tracked properly)
+    // Test entities (in a real game, this would be tracked properly)
     private Entity _testKnife;
+    private Entity _testMovingEntity;
+
+    // Visual representation (Godot node) for the moving entity
+    private Sprite2D? _testSprite;
+
+    /// <summary>
+    /// Test helper: Check if the test moving entity exists.
+    /// Returns true if the entity is alive in the ECS world.
+    /// </summary>
+    public bool TestEntityExists()
+    {
+        return _gameFacade != null && _gameFacade.World.IsAlive(_testMovingEntity);
+    }
+
+    /// <summary>
+    /// Test helper: Get the current position of the test moving entity.
+    /// Returns Vector2.ZERO if entity doesn't exist.
+    /// </summary>
+    public Vector2 GetTestEntityPosition()
+    {
+        if (_gameFacade == null || !_gameFacade.World.IsAlive(_testMovingEntity))
+        {
+            return Vector2.Zero;
+        }
+
+        if (_gameFacade.World.Has<Position>(_testMovingEntity))
+        {
+            ref var position = ref _gameFacade.World.Get<Position>(_testMovingEntity);
+            return new Vector2(position.Value.X, position.Value.Y);
+        }
+
+        return Vector2.Zero;
+    }
+
+    /// <summary>
+    /// Test helper: Send input command to the test entity.
+    /// </summary>
+    public void TestSendMoveCommand(Vector2 direction)
+    {
+        if (_gameFacade != null)
+        {
+            var logicVelocity = new LogicVector2(direction.X, direction.Y);
+            _gameFacade.ProcessCommand(new SetVelocityCommand(_testMovingEntity, logicVelocity));
+        }
+    }
 
     public override void _Ready()
     {
-        GD.Print("Initializing Game Controller...");
+        DebugLogger.Log("Initializing Game Controller...");
 
         // Create and initialize the game facade
         _gameFacade = new GameFacade();
@@ -28,9 +76,22 @@ public partial class GameController : Node
 
         // Create a test knife for demonstration
         _testKnife = _gameFacade.CreateTestKnife("Chef's Knife");
+        DebugLogger.Log($"Created test knife: Chef's Knife (Entity {_testKnife.Id})");
 
-        GD.Print($"Created test knife: Chef's Knife (Entity {_testKnife.Id})");
-        GD.Print("Game Controller initialized!");
+        // Create a test moving entity
+        _testMovingEntity = _gameFacade.CreateTestMovingEntity("Moving Object", new LogicVector2(100, 100));
+        DebugLogger.Log($"Created test moving entity at (100, 100) (Entity {_testMovingEntity.Id})");
+
+        // Get the visual sprite node (sibling node, not child)
+        // This is optional - only test scenes will have it
+        _testSprite = GetNodeOrNull<Sprite2D>("../TestSprite");
+        if (_testSprite != null)
+        {
+            _testSprite.Modulate = Colors.Red;
+            DebugLogger.Log("Found TestSprite node, will sync with ECS position");
+        }
+
+        DebugLogger.Log("Game Controller initialized!");
     }
 
     public override void _Process(double delta)
@@ -43,11 +104,35 @@ public partial class GameController : Node
         // Update ECS systems
         _gameFacade.Update((float)delta);
 
+        // Sync ECS positions to Godot visuals
+        SyncECSToGodot();
+
         // Process events from ECS and update UI
         var events = _gameFacade.ConsumeEvents();
         foreach (var evt in events)
         {
             HandleGameEvent(evt);
+        }
+    }
+
+    /// <summary>
+    /// Syncs ECS component data to Godot visual nodes.
+    /// In a real game, this would use a proper entity-to-node mapping system.
+    /// </summary>
+    private void SyncECSToGodot()
+    {
+        if (_gameFacade == null || _testSprite == null)
+        {
+            return;
+        }
+
+        // Get the Position component from our test moving entity
+        var world = _gameFacade.World;
+        if (world.Has<Position>(_testMovingEntity))
+        {
+            ref var position = ref world.Get<Position>(_testMovingEntity);
+            // Convert our engine-agnostic LogicVector2 to Godot's Vector2
+            _testSprite.Position = new Vector2(position.Value.X, position.Value.Y);
         }
     }
 
@@ -60,7 +145,7 @@ public partial class GameController : Node
         switch (evt)
         {
             case SharpeningStartedEvent startEvent:
-                GD.Print($"Sharpening started on knife (Entity {startEvent.EntityId}), duration: {startEvent.Duration}s");
+                DebugLogger.Log($"Sharpening started on knife (Entity {startEvent.EntityId}), duration: {startEvent.Duration}s");
                 // In a real game:
                 // - Play sharpening animation
                 // - Play sharpening sound
@@ -69,11 +154,11 @@ public partial class GameController : Node
 
             case SharpeningProgressEvent progressEvent:
                 // Update progress bar UI
-                GD.Print($"Sharpening progress: {progressEvent.Progress:P0}");
+                DebugLogger.Log($"Sharpening progress: {progressEvent.Progress:P0}");
                 break;
 
             case KnifeSharpenedEvent sharpenedEvent:
-                GD.Print($"Knife sharpened! (Entity {sharpenedEvent.EntityId}), new sharpness: {sharpenedEvent.FinalSharpness:F2}");
+                DebugLogger.Log($"Knife sharpened! (Entity {sharpenedEvent.EntityId}), new sharpness: {sharpenedEvent.FinalSharpness:F2}");
                 // In a real game:
                 // - Play completion sound
                 // - Show success animation
@@ -81,7 +166,7 @@ public partial class GameController : Node
                 break;
 
             case SharpeningCancelledEvent cancelEvent:
-                GD.Print($"Sharpening cancelled (Entity {cancelEvent.EntityId}) at {cancelEvent.PartialProgress:P0}");
+                DebugLogger.Log($"Sharpening cancelled (Entity {cancelEvent.EntityId}) at {cancelEvent.PartialProgress:P0}");
                 // In a real game:
                 // - Stop animation
                 // - Hide progress bar
@@ -89,14 +174,14 @@ public partial class GameController : Node
                 break;
 
             case KnifeDegradedEvent degradeEvent:
-                GD.Print($"Knife degraded (Entity {degradeEvent.EntityId}), new sharpness: {degradeEvent.NewSharpness:F2}");
+                DebugLogger.Log($"Knife degraded (Entity {degradeEvent.EntityId}), new sharpness: {degradeEvent.NewSharpness:F2}");
                 // In a real game:
                 // - Update sharpness indicator
                 // - Play dulling sound if appropriate
                 break;
 
             default:
-                GD.PrintErr($"Unhandled event type: {evt.GetType().Name}");
+                DebugLogger.LogError($"Unhandled event type: {evt.GetType().Name}");
                 break;
         }
     }
@@ -112,7 +197,7 @@ public partial class GameController : Node
             return;
         }
 
-        GD.Print($"Player started sharpening knife {knifeEntity.Id}");
+        DebugLogger.Log($"Player started sharpening knife {knifeEntity.Id}");
         _gameFacade.ProcessCommand(new StartSharpeningCommand(knifeEntity, duration));
     }
 
@@ -126,7 +211,7 @@ public partial class GameController : Node
             return;
         }
 
-        GD.Print($"Player cancelled sharpening knife {knifeEntity.Id}");
+        DebugLogger.Log($"Player cancelled sharpening knife {knifeEntity.Id}");
         _gameFacade.ProcessCommand(new CancelSharpeningCommand(knifeEntity));
     }
 
@@ -160,6 +245,33 @@ public partial class GameController : Node
                     OnCancelSharpening(_testKnife);
                     break;
 
+                // Movement controls with arrow keys
+                case Key.Right:
+                    _gameFacade.ProcessCommand(new SetVelocityCommand(_testMovingEntity, new LogicVector2(100, 0)));
+                    DebugLogger.Log("Moving right (velocity: 100, 0)");
+                    break;
+
+                case Key.Left:
+                    _gameFacade.ProcessCommand(new SetVelocityCommand(_testMovingEntity, new LogicVector2(-100, 0)));
+                    DebugLogger.Log("Moving left (velocity: -100, 0)");
+                    break;
+
+                case Key.Up:
+                    _gameFacade.ProcessCommand(new SetVelocityCommand(_testMovingEntity, new LogicVector2(0, -100)));
+                    DebugLogger.Log("Moving up (velocity: 0, -100)");
+                    break;
+
+                case Key.Down:
+                    _gameFacade.ProcessCommand(new SetVelocityCommand(_testMovingEntity, new LogicVector2(0, 100)));
+                    DebugLogger.Log("Moving down (velocity: 0, 100)");
+                    break;
+
+                case Key.Space:
+                    // Stop movement
+                    _gameFacade.ProcessCommand(new SetVelocityCommand(_testMovingEntity, LogicVector2.Zero));
+                    DebugLogger.Log("Stopped movement (velocity: 0, 0)");
+                    break;
+
                 default:
                     break;
             }
@@ -170,6 +282,6 @@ public partial class GameController : Node
     {
         // Clean up when game ends
         _gameFacade?.Dispose();
-        GD.Print("Game Controller disposed");
+        DebugLogger.Log("Game Controller disposed");
     }
 }

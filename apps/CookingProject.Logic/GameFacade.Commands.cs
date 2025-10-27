@@ -1,5 +1,6 @@
 using CookingProject.Logic.Core.Commands;
 using CookingProject.Logic.Features.Cooking.Commands;
+using CookingProject.Logic.Features.Movement.Commands;
 using CookingProject.Logic.Features.Sharpening.Commands;
 
 namespace CookingProject.Logic;
@@ -46,6 +47,15 @@ public partial class GameFacade
 
             case RemoveFoodFromBurnerCommand removeCmd:
                 HandleRemoveFoodFromBurner(removeCmd);
+                break;
+
+            // Movement commands
+            case SetVelocityCommand setVelocityCmd:
+                HandleSetVelocity(setVelocityCmd);
+                break;
+
+            case SetPositionCommand setPositionCmd:
+                HandleSetPosition(setPositionCmd);
                 break;
 
             default:
