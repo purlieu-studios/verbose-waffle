@@ -334,11 +334,25 @@ public partial class GameController : Node
             DebugLogger.WriteJsonFile("events.json", eventsJson);
         }
 
-        // Write ECS state snapshot
+        // Write ECS state snapshot (lightweight, entity lifecycle)
         if (_gameFacade.Inspector != null)
         {
             var stateJson = _gameFacade.Inspector.ExportWorldSnapshot();
             DebugLogger.WriteJsonFile("ecs_state.json", stateJson);
+        }
+
+        // Write archetype information (component types per archetype)
+        if (_gameFacade.ArchetypeInspector != null)
+        {
+            var archetypesJson = _gameFacade.ArchetypeInspector.ExportSnapshot();
+            DebugLogger.WriteJsonFile("archetypes.json", archetypesJson);
+        }
+
+        // Write full entity component data (allocates memory, shows actual values)
+        if (_gameFacade.ArchetypeInspector != null)
+        {
+            var entitiesJson = _gameFacade.ArchetypeInspector.ExportEntityDetails();
+            DebugLogger.WriteJsonFile("entities.json", entitiesJson);
         }
     }
 #endif

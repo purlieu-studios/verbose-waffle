@@ -12,6 +12,7 @@ public partial class GameFacade
     private SystemProfiler? _profiler;
     private EventCommandLogger? _eventLogger;
     private ECSStateInspector? _inspector;
+    private ArchetypeInspector? _archetypeInspector;
     private bool _debugEnabled;
 
     /// <summary>
@@ -28,6 +29,7 @@ public partial class GameFacade
         _profiler = new SystemProfiler();
         _eventLogger = new EventCommandLogger();
         _inspector = new ECSStateInspector(_world);
+        _archetypeInspector = new ArchetypeInspector(_world);
         _debugEnabled = true;
     }
 
@@ -39,6 +41,7 @@ public partial class GameFacade
         _profiler = null;
         _eventLogger = null;
         _inspector = null;
+        _archetypeInspector = null;
         _debugEnabled = false;
     }
 
@@ -56,6 +59,11 @@ public partial class GameFacade
     /// Get the ECS state inspector (null if debug not enabled).
     /// </summary>
     public ECSStateInspector? Inspector => _inspector;
+
+    /// <summary>
+    /// Get the archetype inspector for viewing component data (null if debug not enabled).
+    /// </summary>
+    public ArchetypeInspector? ArchetypeInspector => _archetypeInspector;
 
     /// <summary>
     /// Is debug enabled?
