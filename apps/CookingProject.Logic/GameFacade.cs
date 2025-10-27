@@ -7,6 +7,7 @@ using CookingProject.Logic.Features.Cooking;
 using CookingProject.Logic.Features.Cooking.Commands;
 using CookingProject.Logic.Features.Cooking.Components;
 using CookingProject.Logic.Features.Cooking.Events;
+using CookingProject.Logic.Features.Movement;
 using CookingProject.Logic.Features.Sharpening;
 using CookingProject.Logic.Features.Sharpening.Commands;
 using CookingProject.Logic.Features.Sharpening.Components;
@@ -49,6 +50,7 @@ public partial class GameFacade
         }
 
         // Register systems in the order they should be updated
+        _systems.Add(new MovementSystem(_world));
         _systems.Add(new SharpeningSystem(_world, this));
         _systems.Add(new CookingSystem(_world, this));
 
@@ -87,6 +89,12 @@ public partial class GameFacade
         _eventQueue.Clear();
         return events;
     }
+
+    /// <summary>
+    /// Provides read-only access to the ECS world for querying component data.
+    /// Used by GameController to sync visual representations with ECS state.
+    /// </summary>
+    public World World => _world;
 
     /// <summary>
     /// Emits an event to be consumed by Godot.
