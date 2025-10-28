@@ -1,6 +1,8 @@
 using Arch.Core;
+using Arch.Core.Extensions;
 using CookingProject.Logic.Core.Commands;
 using CookingProject.Logic.Core.Events;
+using CookingProject.Logic.Core.Systems;
 using CookingProject.Logic.Features.Chopping.Commands;
 using CookingProject.Logic.Features.Chopping.Components;
 using CookingProject.Logic.Features.Chopping.Events;
@@ -14,7 +16,7 @@ namespace CookingProject.Logic.Features.Chopping;
 /// Handles ingredient chopping mechanics, progress tracking, and knife degradation.
 /// Integrates with sharpening system through Sharpness component.
 /// </summary>
-public class ChoppingSystem
+public class ChoppingSystem : IGameSystem
 {
     private readonly World _world;
     private readonly GameFacade _facade;
@@ -35,6 +37,9 @@ public class ChoppingSystem
     /// </summary>
     public void Update(float deltaTime)
     {
+        // Collect completed chop entities (can't modify archetype during query)
+        var completedChops = new List<Entity>();
+
         // Query all entities being chopped
         _world.Query(in _choppingQuery, (ref Entity entity, ref Ingredient ingredient, ref ChoppableItem choppable, ref ChoppingProgress progress) =>
         {
@@ -48,15 +53,25 @@ public class ChoppingSystem
             // Check if chop is complete
             if (ChoppingLogic.ShouldCompleteChop(progress.ElapsedTime, progress.ChopDuration))
             {
-                CompleteChop(ref choppable, ref ingredient, progress.KnifeEntity, entity);
+                CompleteChop(ref choppable, ref ingredient, progress.KnifeEntity, entity.Id);
+                completedChops.Add(entity); // Store copy for later removal
             }
         });
+
+        // Remove ChoppingProgress from completed chops (after query)
+        foreach (var entity in completedChops)
+        {
+            if (_world.IsAlive(entity) && _world.Has<ChoppingProgress>(entity))
+            {
+                _world.Remove<ChoppingProgress>(entity);
+            }
+        }
     }
 
     /// <summary>
     /// Complete a single chop: increment count, degrade knife, check if fully prepared.
     /// </summary>
-    private void CompleteChop(ref ChoppableItem choppable, ref Ingredient ingredient, Entity knifeEntity, Entity ingredientEntity)
+    private void CompleteChop(ref ChoppableItem choppable, ref Ingredient ingredient, Entity knifeEntity, int ingredientEntityId)
     {
         // Increment chop count
         choppable.CurrentChops = ChoppingLogic.IncrementChops(choppable.CurrentChops, choppable.RequiredChops);
@@ -77,7 +92,7 @@ public class ChoppingSystem
 
         // Emit chop completion event
         _facade.EmitEvent(new IngredientChoppedEvent(
-            ingredientEntity.Id,
+            ingredientEntityId,
             choppable.CurrentChops,
             choppable.IsFullyChopped
         ));
@@ -85,11 +100,10 @@ public class ChoppingSystem
         // Emit fully prepared event if complete
         if (choppable.IsFullyChopped)
         {
-            _facade.EmitEvent(new IngredientFullyPreparedEvent(ingredientEntity.Id));
+            _facade.EmitEvent(new IngredientFullyPreparedEvent(ingredientEntityId));
         }
 
-        // Remove ChoppingProgress component (chop complete)
-        _world.Remove<ChoppingProgress>(ingredientEntity);
+        // Note: ChoppingProgress is removed in Update() after this method returns
     }
 
     /// <summary>

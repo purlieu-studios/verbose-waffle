@@ -3,6 +3,10 @@ using CookingProject.Logic.Core.Commands;
 using CookingProject.Logic.Core.Components;
 using CookingProject.Logic.Core.Events;
 using CookingProject.Logic.Core.Systems;
+using CookingProject.Logic.Features.Chopping;
+using CookingProject.Logic.Features.Chopping.Commands;
+using CookingProject.Logic.Features.Chopping.Components;
+using CookingProject.Logic.Features.Chopping.Events;
 using CookingProject.Logic.Features.Cooking;
 using CookingProject.Logic.Features.Cooking.Commands;
 using CookingProject.Logic.Features.Cooking.Components;
@@ -52,6 +56,10 @@ public partial class GameFacade
         // Register systems in the order they should be updated
         _systems.Add(new MovementSystem(_world));
         _systems.Add(new SharpeningSystem(_world, this));
+
+        _choppingSystem = new ChoppingSystem(_world, this);
+        _systems.Add(_choppingSystem);
+
         _systems.Add(new CookingSystem(_world, this));
 
         // Future systems can be added here:
@@ -122,7 +130,7 @@ public partial class GameFacade
     /// Called by systems when game state changes that the UI should react to.
     /// </summary>
     /// <param name="gameEvent">The event to emit.</param>
-    internal void EmitEvent(IGameEvent gameEvent)
+    internal virtual void EmitEvent(IGameEvent gameEvent)
     {
 #if DEBUG
         _eventLogger?.LogEvent(gameEvent);

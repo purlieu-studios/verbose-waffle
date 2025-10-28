@@ -1,4 +1,5 @@
 using CookingProject.Logic.Core.Commands;
+using CookingProject.Logic.Features.Chopping.Commands;
 using CookingProject.Logic.Features.Cooking.Commands;
 using CookingProject.Logic.Features.Movement.Commands;
 using CookingProject.Logic.Features.Sharpening.Commands;
@@ -38,6 +39,15 @@ public partial class GameFacade
 
             case CancelSharpeningCommand cancelCmd:
                 HandleCancelSharpening(cancelCmd);
+                break;
+
+            // Chopping commands
+            case StartChoppingCommand startChopCmd:
+                HandleStartChopping(startChopCmd);
+                break;
+
+            case CancelChoppingCommand cancelChopCmd:
+                HandleCancelChopping(cancelChopCmd);
                 break;
 
             // Cooking commands
