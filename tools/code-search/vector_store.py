@@ -11,9 +11,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import lancedb
 import numpy as np
 from sentence_transformers import SentenceTransformer
+
+import lancedb
 
 
 class VectorStore:

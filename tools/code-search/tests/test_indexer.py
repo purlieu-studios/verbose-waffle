@@ -346,6 +346,7 @@ class TestIntegration:
         from unittest.mock import Mock
 
         import pandas as pd
+
         from indexer import CodeIndexer
 
         # Create a file

@@ -9,8 +9,9 @@ to search indexed codebases.
 import sys
 from typing import Optional
 
-from indexer import run_indexing
 from mcp.server.fastmcp import FastMCP
+
+from indexer import run_indexing
 from vector_store import VectorStore
 
 # Initialize vector store globally
