@@ -149,9 +149,10 @@ class CodeIndexer:
 
                 # Create chunk if it meets minimum requirements
                 # OR if it's a complete top-level construct (to avoid losing small classes)
-                if len(chunk_content) >= self.MIN_CHUNK_CHARS and len(
-                    current_chunk
-                ) >= self.MIN_CHUNK_LINES:
+                if (
+                    len(chunk_content) >= self.MIN_CHUNK_CHARS
+                    and len(current_chunk) >= self.MIN_CHUNK_LINES
+                ):
                     chunks.append(
                         {
                             "content": chunk_content,
