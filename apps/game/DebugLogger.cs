@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace CookingProject;
 
@@ -190,5 +191,84 @@ public partial class DebugLogger : Node
     public static string GetLogPath()
     {
         return _instance?._logPath ?? "";
+    }
+
+    /// <summary>
+    /// Write JSON data to a file. Used for debug system outputs.
+    /// </summary>
+    public static void WriteJsonFile(string filename, string jsonContent)
+    {
+        if (_instance == null)
+        {
+            return;
+        }
+
+        var projectRoot = ProjectSettings.GlobalizePath("res://");
+        var filePath = Path.Combine(projectRoot, filename);
+
+        try
+        {
+            File.WriteAllText(filePath, jsonContent);
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"Failed to write JSON file {filename}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Write a timestamped snapshot to the debug_snapshots directory.
+    /// Maintains a ring buffer of the last maxSnapshots files.
+    /// </summary>
+    public static void WriteSnapshotFile(string baseFilename, string jsonContent, int maxSnapshots = 5)
+    {
+        if (_instance == null)
+        {
+            return;
+        }
+
+        var projectRoot = ProjectSettings.GlobalizePath("res://");
+        var snapshotsDir = Path.Combine(projectRoot, "debug_snapshots");
+
+        try
+        {
+            // Create directory if it doesn't exist
+            Directory.CreateDirectory(snapshotsDir);
+
+            // Create timestamped filename
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff");
+            var filename = $"{Path.GetFileNameWithoutExtension(baseFilename)}_{timestamp}.json";
+            var filePath = Path.Combine(snapshotsDir, filename);
+
+            // Write the snapshot
+            File.WriteAllText(filePath, jsonContent);
+
+            // Clean up old snapshots (keep only the last maxSnapshots files)
+            var pattern = $"{Path.GetFileNameWithoutExtension(baseFilename)}_*.json";
+            var existingFiles = Directory.GetFiles(snapshotsDir, pattern)
+                .OrderBy(f => File.GetCreationTime(f))
+                .ToArray();
+
+            // Delete oldest files if we exceed the limit
+            if (existingFiles.Length > maxSnapshots)
+            {
+                var filesToDelete = existingFiles.Take(existingFiles.Length - maxSnapshots);
+                foreach (var fileToDelete in filesToDelete)
+                {
+                    try
+                    {
+                        File.Delete(fileToDelete);
+                    }
+                    catch (Exception deleteEx)
+                    {
+                        GD.PrintErr($"Failed to delete old snapshot {fileToDelete}: {deleteEx.Message}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"Failed to write snapshot file {baseFilename}: {ex.Message}");
+        }
     }
 }

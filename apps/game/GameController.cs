@@ -1,3 +1,4 @@
+using System;
 using Arch.Core;
 using Godot;
 using CookingProject.Logic;
@@ -66,13 +67,29 @@ public partial class GameController : Node
         }
     }
 
+    private int _frameCounter;
+    private ulong _totalFrames;  // Total frame count since start
+    private const int DebugWriteInterval = 60; // Write debug files every 60 frames (~1 second at 60 FPS)
+
     public override void _Ready()
     {
         DebugLogger.Log("Initializing Game Controller...");
 
+#if DEBUG
+        // Install crash dump handler
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        DebugLogger.Log("Crash dump handler installed");
+#endif
+
         // Create and initialize the game facade
         _gameFacade = new GameFacade();
         _gameFacade.Initialize();
+
+#if DEBUG
+        // Enable debug systems
+        _gameFacade.EnableDebug();
+        DebugLogger.Log("Debug systems enabled");
+#endif
 
         // Create a test knife for demonstration
         _testKnife = _gameFacade.CreateTestKnife("Chef's Knife");
@@ -113,6 +130,17 @@ public partial class GameController : Node
         {
             HandleGameEvent(evt);
         }
+
+#if DEBUG
+        // Periodically write debug data to JSON files
+        _totalFrames++;
+        _frameCounter++;
+        if (_frameCounter >= DebugWriteInterval)
+        {
+            WriteDebugFiles(_totalFrames);
+            _frameCounter = 0;
+        }
+#endif
     }
 
     /// <summary>
@@ -218,6 +246,7 @@ public partial class GameController : Node
     /// <summary>
     /// Example input handling for testing.
     /// Press keys to test different commands.
+    /// Debug: F12 = Manual debug snapshot
     /// </summary>
     public override void _Input(InputEvent @event)
     {
@@ -272,6 +301,14 @@ public partial class GameController : Node
                     DebugLogger.Log("Stopped movement (velocity: 0, 0)");
                     break;
 
+#if DEBUG
+                case Key.F12:
+                    // Manual debug snapshot (saves to debug_snapshots/ with timestamp)
+                    DebugLogger.Log($"[F12] Manual debug snapshot at frame {_totalFrames}");
+                    WriteDebugFiles(_totalFrames, isSnapshot: true);
+                    break;
+#endif
+
                 default:
                     break;
             }
@@ -280,8 +317,103 @@ public partial class GameController : Node
 
     public override void _ExitTree()
     {
+#if DEBUG
+        // Write final debug snapshot before exiting
+        WriteDebugFiles(_totalFrames);
+#endif
+
         // Clean up when game ends
         _gameFacade?.Dispose();
         DebugLogger.Log("Game Controller disposed");
     }
+
+#if DEBUG
+    /// <summary>
+    /// Unhandled exception handler - dumps debug state on crash.
+    /// </summary>
+    private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        try
+        {
+            DebugLogger.LogError($"[CRASH] Unhandled exception detected:");
+            DebugLogger.LogError(e.ExceptionObject.ToString() ?? "Unknown exception");
+            DebugLogger.LogError($"[CRASH] Dumping debug state at frame {_totalFrames}...");
+
+            // Write crash dump with snapshot
+            WriteDebugFiles(_totalFrames, isSnapshot: true);
+
+            DebugLogger.LogError("[CRASH] Debug state dumped to debug_snapshots/");
+        }
+        catch (Exception dumpEx)
+        {
+            DebugLogger.LogError($"[CRASH] Failed to dump debug state: {dumpEx.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Write debug data to JSON files for Claude to read.
+    /// </summary>
+    private void WriteDebugFiles(ulong frameNumber, bool isSnapshot = false)
+    {
+        if (_gameFacade?.IsDebugEnabled != true)
+        {
+            return;
+        }
+
+        // Write performance data
+        if (_gameFacade.Profiler != null)
+        {
+            var perfJson = _gameFacade.Profiler.ExportJson(frameCount: 60);
+            DebugLogger.WriteJsonFile("performance.json", perfJson);
+            if (isSnapshot)
+            {
+                DebugLogger.WriteSnapshotFile("performance", perfJson);
+            }
+        }
+
+        // Write event/command log
+        if (_gameFacade.EventLogger != null)
+        {
+            var eventsJson = _gameFacade.EventLogger.ExportJson(maxEntries: 100);
+            DebugLogger.WriteJsonFile("events.json", eventsJson);
+            if (isSnapshot)
+            {
+                DebugLogger.WriteSnapshotFile("events", eventsJson);
+            }
+        }
+
+        // Write ECS state snapshot (lightweight, entity lifecycle)
+        if (_gameFacade.Inspector != null)
+        {
+            var stateJson = _gameFacade.Inspector.ExportWorldSnapshot();
+            DebugLogger.WriteJsonFile("ecs_state.json", stateJson);
+            if (isSnapshot)
+            {
+                DebugLogger.WriteSnapshotFile("ecs_state", stateJson);
+            }
+        }
+
+        // Write archetype information (component types per archetype)
+        if (_gameFacade.ArchetypeInspector != null)
+        {
+            var archetypesJson = _gameFacade.ArchetypeInspector.ExportSnapshot(frameNumber);
+            DebugLogger.WriteJsonFile("archetypes.json", archetypesJson);
+            if (isSnapshot)
+            {
+                DebugLogger.WriteSnapshotFile("archetypes", archetypesJson);
+            }
+        }
+
+        // Write full entity component data (allocates memory, shows actual values)
+        if (_gameFacade.ArchetypeInspector != null)
+        {
+            var entitiesJson = _gameFacade.ArchetypeInspector.ExportEntityDetails(frameNumber);
+            DebugLogger.WriteJsonFile("entities.json", entitiesJson);
+            if (isSnapshot)
+            {
+                DebugLogger.WriteSnapshotFile("entities", entitiesJson);
+            }
+        }
+    }
+#endif
 }

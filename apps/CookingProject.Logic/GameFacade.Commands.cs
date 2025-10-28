@@ -25,6 +25,10 @@ public partial class GameFacade
             throw new InvalidOperationException("GameFacade must be initialized before ProcessCommand()");
         }
 
+#if DEBUG
+        _eventLogger?.LogCommand(command);
+#endif
+
         switch (command)
         {
             // Sharpening commands
