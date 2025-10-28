@@ -10,6 +10,7 @@ from pathlib import Path
 
 # Import the module we're testing
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from vector_store import VectorStore
 
@@ -17,8 +18,8 @@ from vector_store import VectorStore
 class TestVectorStoreInitialization:
     """Tests for VectorStore initialization."""
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_init_creates_db_directory(self, mock_connect, mock_model):
         """Test that initialization creates the database directory."""
         mock_model_instance = Mock()
@@ -35,8 +36,8 @@ class TestVectorStoreInitialization:
         assert store.embedding_dim == 384
         mock_connect.assert_called_once_with("./test_db")
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_init_loads_existing_table(self, mock_connect, mock_model):
         """Test that initialization loads an existing table."""
         mock_model_instance = Mock()
@@ -59,8 +60,8 @@ class TestVectorStoreInitialization:
 class TestVectorStoreAddChunks:
     """Tests for adding chunks to the vector store."""
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_add_chunks_to_new_table(self, mock_connect, mock_model):
         """Test adding chunks when table doesn't exist."""
         # Setup mocks
@@ -93,8 +94,8 @@ class TestVectorStoreAddChunks:
         mock_db.create_table.assert_called_once()
         assert store.table == mock_table
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_add_chunks_validates_input(self, mock_connect, mock_model):
         """Test that empty chunks list raises ValueError."""
         mock_model_instance = Mock()
@@ -110,8 +111,8 @@ class TestVectorStoreAddChunks:
         with pytest.raises(ValueError, match="Chunks list cannot be empty"):
             store.add_chunks([])
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_add_chunks_with_update_existing(self, mock_connect, mock_model):
         """Test adding chunks with update_existing=True removes old chunks."""
         mock_model_instance = Mock()
@@ -147,8 +148,8 @@ class TestVectorStoreAddChunks:
 class TestVectorStoreSearch:
     """Tests for searching the vector store."""
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_search_returns_results(self, mock_connect, mock_model):
         """Test that search returns formatted results."""
         mock_model_instance = Mock()
@@ -157,16 +158,18 @@ class TestVectorStoreSearch:
         mock_model.return_value = mock_model_instance
 
         # Mock search results
-        mock_search_results = pd.DataFrame([
-            {
-                "content": "test content",
-                "source": "test.py",
-                "file_path": "/test/test.py",
-                "_distance": 0.5,
-                "start_line": 1,
-                "end_line": 10,
-            }
-        ])
+        mock_search_results = pd.DataFrame(
+            [
+                {
+                    "content": "test content",
+                    "source": "test.py",
+                    "file_path": "/test/test.py",
+                    "_distance": 0.5,
+                    "start_line": 1,
+                    "end_line": 10,
+                }
+            ]
+        )
 
         mock_search = Mock()
         mock_search.limit.return_value.to_pandas.return_value = mock_search_results
@@ -187,8 +190,8 @@ class TestVectorStoreSearch:
         assert results[0]["source"] == "test.py"
         assert results[0]["score"] == 0.5
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_search_validates_query(self, mock_connect, mock_model):
         """Test that empty query raises ValueError."""
         mock_model_instance = Mock()
@@ -205,8 +208,8 @@ class TestVectorStoreSearch:
         with pytest.raises(ValueError, match="Query cannot be empty"):
             store.search("")
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_search_raises_when_no_data(self, mock_connect, mock_model):
         """Test that search raises error when no data indexed."""
         mock_model_instance = Mock()
@@ -226,8 +229,8 @@ class TestVectorStoreSearch:
 class TestVectorStoreManagement:
     """Tests for vector store management operations."""
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_remove_chunks_by_file(self, mock_connect, mock_model):
         """Test removing chunks from a specific file."""
         mock_model_instance = Mock()
@@ -235,11 +238,13 @@ class TestVectorStoreManagement:
         mock_model.return_value = mock_model_instance
 
         # Mock table with data
-        test_data = pd.DataFrame([
-            {"file_path": "/test/file1.py", "content": "content1"},
-            {"file_path": "/test/file2.py", "content": "content2"},
-            {"file_path": "/test/file1.py", "content": "content3"},
-        ])
+        test_data = pd.DataFrame(
+            [
+                {"file_path": "/test/file1.py", "content": "content1"},
+                {"file_path": "/test/file2.py", "content": "content2"},
+                {"file_path": "/test/file1.py", "content": "content3"},
+            ]
+        )
 
         mock_table = Mock()
         mock_table.to_pandas.return_value = test_data
@@ -258,8 +263,8 @@ class TestVectorStoreManagement:
         mock_db.drop_table.assert_called_once_with("code_chunks")
         mock_db.create_table.assert_called_once()
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_clear_drops_table(self, mock_connect, mock_model):
         """Test that clear drops the table."""
         mock_model_instance = Mock()
@@ -278,19 +283,21 @@ class TestVectorStoreManagement:
         mock_db.drop_table.assert_called_once_with("code_chunks")
         assert store.table is None
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_get_stats_with_data(self, mock_connect, mock_model):
         """Test getting statistics when data exists."""
         mock_model_instance = Mock()
         mock_model_instance.get_sentence_embedding_dimension.return_value = 384
         mock_model.return_value = mock_model_instance
 
-        test_data = pd.DataFrame([
-            {"file_path": "/test/file1.py", "content": "content1"},
-            {"file_path": "/test/file2.py", "content": "content2"},
-            {"file_path": "/test/file1.py", "content": "content3"},
-        ])
+        test_data = pd.DataFrame(
+            [
+                {"file_path": "/test/file1.py", "content": "content1"},
+                {"file_path": "/test/file2.py", "content": "content2"},
+                {"file_path": "/test/file1.py", "content": "content3"},
+            ]
+        )
 
         mock_table = Mock()
         mock_table.to_pandas.return_value = test_data
@@ -308,8 +315,8 @@ class TestVectorStoreManagement:
         assert stats["embedding_dim"] == 384
         assert "test_db" in stats["db_path"]
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_get_stats_without_data(self, mock_connect, mock_model):
         """Test getting statistics when no data exists."""
         mock_model_instance = Mock()
@@ -331,8 +338,8 @@ class TestVectorStoreManagement:
 class TestVectorStoreHelperMethods:
     """Tests for helper methods."""
 
-    @patch('vector_store.SentenceTransformer')
-    @patch('vector_store.lancedb.connect')
+    @patch("vector_store.SentenceTransformer")
+    @patch("vector_store.lancedb.connect")
     def test_compute_hash(self, mock_connect, mock_model):
         """Test hash computation is consistent."""
         mock_model_instance = Mock()

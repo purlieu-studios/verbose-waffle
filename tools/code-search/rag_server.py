@@ -72,15 +72,13 @@ def search_codebase(query: str, top_k: Optional[int] = 5) -> str:
             "  python indexer.py /path/to/your/project"
         )
     except Exception as e:
-        return (
-            f"Search error: {str(e)}\n\n"
-            f"Query: {query}\n"
-            f"Top K: {top_k}"
-        )
+        return f"Search error: {str(e)}\n\n" f"Query: {query}\n" f"Top K: {top_k}"
 
 
 @mcp.tool()
-def reindex_codebase(directory: Optional[str] = ".", clear: Optional[bool] = False) -> str:
+def reindex_codebase(
+    directory: Optional[str] = ".", clear: Optional[bool] = False
+) -> str:
     """
     Reindex the codebase to update the vector database with latest code changes.
 
@@ -101,6 +99,7 @@ def reindex_codebase(directory: Optional[str] = ".", clear: Optional[bool] = Fal
 
     # Convert to absolute path for better clarity
     import os
+
     abs_directory = os.path.abspath(directory)
 
     # Build status header
@@ -117,35 +116,39 @@ def reindex_codebase(directory: Optional[str] = ".", clear: Optional[bool] = Fal
 
     if not result["success"]:
         error_msg = result.get("error", "Unknown error")
-        lines.extend([
-            f"❌ Indexing failed: {error_msg}",
-            "",
-            "Common issues:",
-            "- Directory doesn't exist or is not accessible",
-            "- No supported files found (.cs, .md, .txt)",
-            "- Permission denied",
-            "",
-            f"{'='*70}",
-        ])
+        lines.extend(
+            [
+                f"❌ Indexing failed: {error_msg}",
+                "",
+                "Common issues:",
+                "- Directory doesn't exist or is not accessible",
+                "- No supported files found (.cs, .md, .txt)",
+                "- Permission denied",
+                "",
+                f"{'='*70}",
+            ]
+        )
         return "\n".join(lines)
 
     # Success - format results
-    lines.extend([
-        "✅ Indexing completed successfully!",
-        "",
-        "Results:",
-        f"  • Files processed:  {result['files_processed']}",
-        f"  • Files skipped:    {result['files_skipped']}",
-        f"  • Chunks added:     {result['chunks_added']}",
-        "",
-        "Database Statistics:",
-        f"  • Total chunks:     {result['total_chunks']}",
-        f"  • Unique files:     {result['unique_files']}",
-        "",
-        f"{'='*70}",
-        "",
-        "💡 Tip: Use search_codebase to test the updated index!",
-    ])
+    lines.extend(
+        [
+            "✅ Indexing completed successfully!",
+            "",
+            "Results:",
+            f"  • Files processed:  {result['files_processed']}",
+            f"  • Files skipped:    {result['files_skipped']}",
+            f"  • Chunks added:     {result['chunks_added']}",
+            "",
+            "Database Statistics:",
+            f"  • Total chunks:     {result['total_chunks']}",
+            f"  • Unique files:     {result['unique_files']}",
+            "",
+            f"{'='*70}",
+            "",
+            "💡 Tip: Use search_codebase to test the updated index!",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -199,7 +202,9 @@ def format_search_results(query: str, results: list[dict]) -> str:
     lines.append("=" * 80)
     lines.append("")
     lines.append("Search Tips:")
-    lines.append("- Use specific terms for better results (e.g., 'user authentication' vs 'code')")
+    lines.append(
+        "- Use specific terms for better results (e.g., 'user authentication' vs 'code')"
+    )
     lines.append("- Increase top_k parameter to see more results")
     lines.append("- Results are ordered by relevance (lower score = more relevant)")
 

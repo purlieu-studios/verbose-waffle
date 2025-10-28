@@ -339,7 +339,8 @@ class CodeIndexer:
             # Only consider files under our root_path
             root_str = str(self.root_path.resolve())
             deleted_files = [
-                fp for fp in db_files
+                fp
+                for fp in db_files
                 if fp.startswith(root_str) and fp not in current_file_paths
             ]
 

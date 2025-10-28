@@ -10,6 +10,7 @@ import os
 
 # Import the module we're testing
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from indexer import CodeIndexer
 
@@ -172,7 +173,8 @@ class TestFileProcessing:
     def test_process_file_success(self, tmp_path):
         """Test successfully processing a file."""
         test_file = tmp_path / "test.cs"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 public class TestClass
 {
     public void TestMethod()
@@ -180,7 +182,8 @@ public class TestClass
         Console.WriteLine("Hello");
     }
 }
-""")
+"""
+        )
 
         indexer = CodeIndexer(str(tmp_path))
         chunks = indexer.process_file(test_file)
@@ -203,7 +206,7 @@ public class TestClass
         """Test file with encoding errors is handled gracefully."""
         test_file = tmp_path / "binary.cs"
         # Write some binary content
-        test_file.write_bytes(b'\x80\x81\x82\x83')
+        test_file.write_bytes(b"\x80\x81\x82\x83")
 
         indexer = CodeIndexer(str(tmp_path))
         # Should not raise, just handle gracefully

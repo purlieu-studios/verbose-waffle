@@ -8,13 +8,14 @@ from pathlib import Path
 
 # Import the module we're testing
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 class TestSearchCodebaseTool:
     """Tests for the search_codebase MCP tool."""
 
-    @patch('rag_server.store')
+    @patch("rag_server.store")
     def test_search_with_valid_query(self, mock_store):
         """Test successful search with valid query."""
         # Import after patching
@@ -38,7 +39,7 @@ class TestSearchCodebaseTool:
         assert "GameManager.cs" in result
         mock_store.search.assert_called_once_with("game manager", top_k=5)
 
-    @patch('rag_server.store')
+    @patch("rag_server.store")
     def test_search_with_empty_query(self, mock_store):
         """Test that empty query returns error message."""
         from rag_server import search_codebase
@@ -49,7 +50,7 @@ class TestSearchCodebaseTool:
         assert "empty" in result.lower()
         mock_store.search.assert_not_called()
 
-    @patch('rag_server.store')
+    @patch("rag_server.store")
     def test_search_clamps_top_k(self, mock_store):
         """Test that top_k is clamped to valid range."""
         from rag_server import search_codebase
@@ -68,7 +69,7 @@ class TestSearchCodebaseTool:
         search_codebase("test", top_k=None)
         mock_store.search.assert_called_with("test", top_k=5)
 
-    @patch('rag_server.store')
+    @patch("rag_server.store")
     def test_search_with_no_results(self, mock_store):
         """Test search when no results found."""
         from rag_server import search_codebase
@@ -80,7 +81,7 @@ class TestSearchCodebaseTool:
         assert "No results found" in result
         assert "indexed" in result.lower()
 
-    @patch('rag_server.store')
+    @patch("rag_server.store")
     def test_search_handles_value_error(self, mock_store):
         """Test search handles ValueError from store."""
         from rag_server import search_codebase
@@ -93,7 +94,7 @@ class TestSearchCodebaseTool:
         assert "No data indexed yet" in result
         assert "indexer.py" in result
 
-    @patch('rag_server.store')
+    @patch("rag_server.store")
     def test_search_handles_general_exception(self, mock_store):
         """Test search handles unexpected exceptions."""
         from rag_server import search_codebase
@@ -109,8 +110,8 @@ class TestSearchCodebaseTool:
 class TestReindexCodebaseTool:
     """Tests for the reindex_codebase MCP tool."""
 
-    @patch('rag_server.run_indexing')
-    @patch('rag_server.store')
+    @patch("rag_server.run_indexing")
+    @patch("rag_server.store")
     def test_reindex_with_defaults(self, mock_store, mock_run_indexing):
         """Test reindex with default parameters."""
         from rag_server import reindex_codebase
@@ -128,8 +129,8 @@ class TestReindexCodebaseTool:
         mock_store.clear.assert_not_called()  # clear=False by default
         mock_run_indexing.assert_called_once()
 
-    @patch('rag_server.run_indexing')
-    @patch('rag_server.store')
+    @patch("rag_server.run_indexing")
+    @patch("rag_server.store")
     def test_reindex_with_clear_true(self, mock_store, mock_run_indexing):
         """Test reindex with clear=True clears database first."""
         from rag_server import reindex_codebase
@@ -145,8 +146,8 @@ class TestReindexCodebaseTool:
         mock_store.clear.assert_called_once()
         assert "Clearing" in result or "cleared" in result.lower()
 
-    @patch('rag_server.run_indexing')
-    @patch('rag_server.store')
+    @patch("rag_server.run_indexing")
+    @patch("rag_server.store")
     def test_reindex_with_custom_directory(self, mock_store, mock_run_indexing):
         """Test reindex with custom directory."""
         from rag_server import reindex_codebase
@@ -163,8 +164,8 @@ class TestReindexCodebaseTool:
         args, kwargs = mock_run_indexing.call_args
         assert "/custom/path" in str(args) or "/custom/path" in str(kwargs)
 
-    @patch('rag_server.run_indexing')
-    @patch('rag_server.store')
+    @patch("rag_server.run_indexing")
+    @patch("rag_server.store")
     def test_reindex_handles_exception(self, mock_store, mock_run_indexing):
         """Test reindex handles indexing errors."""
         from rag_server import reindex_codebase
@@ -176,8 +177,8 @@ class TestReindexCodebaseTool:
         assert "Error" in result
         assert "Indexing failed" in result
 
-    @patch('rag_server.run_indexing')
-    @patch('rag_server.store')
+    @patch("rag_server.run_indexing")
+    @patch("rag_server.store")
     def test_reindex_with_empty_directory(self, mock_store, mock_run_indexing):
         """Test reindex defaults empty directory to current dir."""
         from rag_server import reindex_codebase
@@ -224,16 +225,17 @@ class TestFormatSearchResults:
 class TestMCPServerInitialization:
     """Tests for MCP server setup."""
 
-    @patch('rag_server.VectorStore')
+    @patch("rag_server.VectorStore")
     def test_server_initializes_vector_store(self, mock_vector_store):
         """Test that server initializes vector store on startup."""
         # Reimport to trigger initialization
         import importlib
         import rag_server
+
         importlib.reload(rag_server)
 
         # VectorStore should be instantiated
-        assert mock_vector_store.called or hasattr(rag_server, 'store')
+        assert mock_vector_store.called or hasattr(rag_server, "store")
 
     def test_mcp_tools_are_registered(self):
         """Test that MCP tools are properly registered."""
