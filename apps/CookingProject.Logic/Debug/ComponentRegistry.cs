@@ -1,4 +1,5 @@
 using CookingProject.Logic.Core.Components;
+using CookingProject.Logic.Features.Chopping.Components;
 using CookingProject.Logic.Features.Cooking.Components;
 using CookingProject.Logic.Features.Movement.Components;
 using CookingProject.Logic.Features.Sharpening.Components;
@@ -33,7 +34,12 @@ public static class ComponentRegistry
         typeof(CookingProgress),
         typeof(CookingRequirements),
         typeof(BurnProgress),
-        typeof(Container)
+        typeof(Container),
+
+        // Chopping components
+        typeof(Ingredient),
+        typeof(ChoppableItem),
+        typeof(ChoppingProgress)
     };
 
     /// <summary>
