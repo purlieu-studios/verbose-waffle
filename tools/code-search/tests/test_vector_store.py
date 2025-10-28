@@ -34,7 +34,8 @@ class TestVectorStoreInitialization:
 
         assert store.db_path == Path("./test_db")
         assert store.embedding_dim == 384
-        mock_connect.assert_called_once_with("./test_db")
+        # Path("./test_db") converts to "test_db" when stringified
+        mock_connect.assert_called_once_with("test_db")
 
     @patch("vector_store.SentenceTransformer")
     @patch("vector_store.lancedb.connect")
@@ -121,6 +122,7 @@ class TestVectorStoreAddChunks:
         mock_model.return_value = mock_model_instance
 
         mock_table = Mock()
+        mock_table.__len__ = Mock(return_value=10)
         mock_table.add = Mock()
 
         mock_db = Mock()
@@ -175,6 +177,7 @@ class TestVectorStoreSearch:
         mock_search.limit.return_value.to_pandas.return_value = mock_search_results
 
         mock_table = Mock()
+        mock_table.__len__ = Mock(return_value=1)
         mock_table.search.return_value = mock_search
 
         mock_db = Mock()
@@ -247,6 +250,7 @@ class TestVectorStoreManagement:
         )
 
         mock_table = Mock()
+        mock_table.__len__ = Mock(return_value=3)
         mock_table.to_pandas.return_value = test_data
 
         mock_db = Mock()
@@ -300,6 +304,7 @@ class TestVectorStoreManagement:
         )
 
         mock_table = Mock()
+        mock_table.__len__ = Mock(return_value=3)
         mock_table.to_pandas.return_value = test_data
 
         mock_db = Mock()

@@ -112,7 +112,17 @@ def reindex_codebase(
     ]
 
     # Run the indexing
-    result = run_indexing(directory=directory, db_path="./lancedb", clear=clear)
+    try:
+        result = run_indexing(directory=directory, db_path="./lancedb", clear=clear)
+    except Exception as e:
+        lines.extend(
+            [
+                f"❌ Error during indexing: {str(e)}",
+                "",
+                f"{'='*70}",
+            ]
+        )
+        return "\n".join(lines)
 
     if not result["success"]:
         error_msg = result.get("error", "Unknown error")

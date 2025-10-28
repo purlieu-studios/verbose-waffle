@@ -139,7 +139,7 @@ It also has multiple lines.
 
 This is the third paragraph."""
 
-        chunks = indexer.chunk_text(text, Path("test.md"))
+        chunks = indexer.chunk_code(text, Path("test.md"))
 
         assert len(chunks) == 3
         assert "first paragraph" in chunks[0]["content"]

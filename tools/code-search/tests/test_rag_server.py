@@ -117,9 +117,12 @@ class TestReindexCodebaseTool:
         from rag_server import reindex_codebase
 
         mock_run_indexing.return_value = {
+            "success": True,
             "files_processed": 10,
             "files_skipped": 2,
             "chunks_added": 50,
+            "total_chunks": 50,
+            "unique_files": 8,
         }
 
         result = reindex_codebase()
@@ -132,18 +135,23 @@ class TestReindexCodebaseTool:
     @patch("rag_server.run_indexing")
     @patch("rag_server.store")
     def test_reindex_with_clear_true(self, mock_store, mock_run_indexing):
-        """Test reindex with clear=True clears database first."""
+        """Test reindex with clear=True passes clear flag to run_indexing."""
         from rag_server import reindex_codebase
 
         mock_run_indexing.return_value = {
+            "success": True,
             "files_processed": 5,
             "files_skipped": 0,
             "chunks_added": 25,
+            "total_chunks": 25,
+            "unique_files": 5,
         }
 
         result = reindex_codebase(clear=True)
 
-        mock_store.clear.assert_called_once()
+        # Check that run_indexing was called with clear=True
+        args, kwargs = mock_run_indexing.call_args
+        assert kwargs.get("clear") is True
         assert "Clearing" in result or "cleared" in result.lower()
 
     @patch("rag_server.run_indexing")
@@ -153,9 +161,12 @@ class TestReindexCodebaseTool:
         from rag_server import reindex_codebase
 
         mock_run_indexing.return_value = {
+            "success": True,
             "files_processed": 3,
             "files_skipped": 1,
             "chunks_added": 15,
+            "total_chunks": 15,
+            "unique_files": 2,
         }
 
         result = reindex_codebase(directory="/custom/path")
@@ -184,9 +195,12 @@ class TestReindexCodebaseTool:
         from rag_server import reindex_codebase
 
         mock_run_indexing.return_value = {
+            "success": True,
             "files_processed": 0,
             "files_skipped": 0,
             "chunks_added": 0,
+            "total_chunks": 0,
+            "unique_files": 0,
         }
 
         result = reindex_codebase(directory="")
@@ -237,12 +251,14 @@ class TestMCPServerInitialization:
         # VectorStore should be instantiated
         assert mock_vector_store.called or hasattr(rag_server, "store")
 
-    def test_mcp_tools_are_registered(self):
+    @pytest.mark.asyncio
+    async def test_mcp_tools_are_registered(self):
         """Test that MCP tools are properly registered."""
         from rag_server import mcp
 
         # Check that tools are available
-        tool_names = [tool.name for tool in mcp.list_tools()]
+        tools = await mcp.list_tools()
+        tool_names = [tool.name for tool in tools]
 
         assert "search_codebase" in tool_names
         assert "reindex_codebase" in tool_names
