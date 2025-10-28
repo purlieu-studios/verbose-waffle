@@ -3,6 +3,7 @@ Tests for the code indexer module.
 """
 
 import os
+
 # Import the module we're testing
 import sys
 import tempfile
