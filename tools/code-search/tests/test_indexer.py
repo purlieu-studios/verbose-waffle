@@ -254,3 +254,141 @@ public class Test  // Line 2
         chunk = chunks[0]
         assert chunk["start_line"] == 1
         assert chunk["end_line"] > chunk["start_line"]
+
+
+class TestIntegration:
+    """Integration tests for the full indexing flow."""
+
+    def test_index_empty_directory(self, tmp_path):
+        """Test indexing an empty directory."""
+        from indexer import CodeIndexer
+        from unittest.mock import Mock
+
+        indexer = CodeIndexer(str(tmp_path))
+        mock_store = Mock()
+
+        # Should handle empty directory gracefully
+        indexer.index(mock_store)
+
+        assert indexer.files_processed == 0
+        assert indexer.files_skipped == 0
+        mock_store.add_chunks.assert_not_called()
+
+    def test_index_with_files(self, tmp_path):
+        """Test indexing directory with actual files."""
+        from indexer import CodeIndexer
+        from unittest.mock import Mock
+
+        # Create test files
+        cs_file = tmp_path / "test.cs"
+        cs_file.write_text(
+            """public class TestClass
+{
+    public void Method()
+    {
+        var x = 1;
+    }
+}"""
+        )
+
+        md_file = tmp_path / "readme.md"
+        md_file.write_text("This is a test readme with enough content to pass.")
+
+        indexer = CodeIndexer(str(tmp_path))
+        mock_store = Mock()
+        mock_store.add_chunks.return_value = 2
+
+        indexer.index(mock_store)
+
+        assert indexer.files_processed == 2
+        assert indexer.files_skipped == 0
+        assert indexer.total_chunks == 2
+        mock_store.add_chunks.assert_called_once()
+
+    def test_run_indexing_function(self, tmp_path):
+        """Test the run_indexing function."""
+        from indexer import run_indexing
+
+        # Create a test file
+        test_file = tmp_path / "test.cs"
+        test_file.write_text(
+            """public class TestClass
+{
+    public void Method()
+    {
+        var x = 1;
+    }
+}"""
+        )
+
+        result = run_indexing(
+            directory=str(tmp_path), db_path=str(tmp_path / "testdb"), clear=True
+        )
+
+        assert result["success"] is True
+        assert result["files_processed"] >= 1
+        assert result["chunks_added"] >= 1
+
+    def test_run_indexing_with_invalid_directory(self):
+        """Test run_indexing with non-existent directory."""
+        from indexer import run_indexing
+
+        result = run_indexing(directory="/nonexistent/path")
+
+        assert result["success"] is False
+        assert "error" in result
+
+    def test_remove_deleted_files(self, tmp_path):
+        """Test that deleted files are removed from index."""
+        from indexer import CodeIndexer
+        from unittest.mock import Mock
+        import pandas as pd
+
+        # Create a file
+        test_file = tmp_path / "test.cs"
+        test_file.write_text("public class Test { }")
+
+        indexer = CodeIndexer(str(tmp_path))
+
+        # Mock vector store that claims to have data from deleted files
+        mock_store = Mock()
+        mock_store.get_stats.return_value = {"total_chunks": 2}
+
+        # Mock table data including a deleted file
+        df = pd.DataFrame(
+            [
+                {"file_path": str(tmp_path / "test.cs"), "content": "content1"},
+                {
+                    "file_path": str(tmp_path / "deleted.cs"),
+                    "content": "content2",
+                },
+            ]
+        )
+        mock_store.table = Mock()
+        mock_store.table.to_pandas.return_value = df
+        mock_store.remove_chunks_by_file = Mock(return_value=1)
+
+        indexer.index(mock_store, remove_deleted=True)
+
+        # Should have called remove_chunks_by_file for the deleted file
+        mock_store.remove_chunks_by_file.assert_called_with(
+            str(tmp_path / "deleted.cs")
+        )
+
+    def test_print_summary_called(self, tmp_path, capsys):
+        """Test that summary is printed."""
+        from indexer import CodeIndexer
+        from unittest.mock import Mock
+
+        test_file = tmp_path / "test.cs"
+        test_file.write_text("public class Test { }")
+
+        indexer = CodeIndexer(str(tmp_path))
+        mock_store = Mock()
+        mock_store.add_chunks.return_value = 1
+
+        indexer.index(mock_store)
+
+        captured = capsys.readouterr()
+        assert "INDEXING SUMMARY" in captured.out
+        assert "Files processed:" in captured.out
