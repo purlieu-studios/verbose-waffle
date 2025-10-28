@@ -185,10 +185,11 @@ public class ArchetypeInspector
     /// Exports a comprehensive snapshot of all archetypes and entities.
     /// </summary>
     [SuppressMessage("Performance", "CA1869:Cache and reuse 'JsonSerializerOptions' instances", Justification = "Static field used")]
-    public string ExportSnapshot()
+    public string ExportSnapshot(ulong frameNumber = 0)
     {
         var snapshot = new
         {
+            FrameNumber = frameNumber,
             Timestamp = DateTime.Now,
             Archetypes = GetArchetypes(),
             TotalEntities = GetAllEntities().Count
@@ -202,7 +203,7 @@ public class ArchetypeInspector
     /// WARNING: Allocates memory for each entity's components.
     /// </summary>
     [SuppressMessage("Performance", "CA1869:Cache and reuse 'JsonSerializerOptions' instances", Justification = "Static field used")]
-    public string ExportEntityDetails()
+    public string ExportEntityDetails(ulong frameNumber = 0)
     {
         var entityDetails = new List<EntityDetailInfo>();
 
@@ -232,6 +233,7 @@ public class ArchetypeInspector
 
         var snapshot = new
         {
+            FrameNumber = frameNumber,
             Timestamp = DateTime.Now,
             EntityCount = entityDetails.Count,
             Entities = entityDetails
