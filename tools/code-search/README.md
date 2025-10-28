@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 This installs:
 - `mcp` - MCP protocol for Claude integration
-- `lancedb` - Vector database
+- `lancedb` (0.25.x) - Vector database
 - `sentence-transformers` - Embedding model
 - `torch`, `numpy`, `pandas` - Supporting libraries
 

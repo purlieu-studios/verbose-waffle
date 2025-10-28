@@ -130,6 +130,7 @@ class CodeIndexer:
         current_chunk = []
         chunk_start_line = 1
         brace_depth = 0
+        prev_depth = 0  # Track previous depth to detect transitions
         line_number = 1
 
         for line in lines:
@@ -142,11 +143,12 @@ class CodeIndexer:
                 elif char == "}":
                     brace_depth -= 1
 
-            # When brace depth returns to 0 and we have content, create chunk
-            if brace_depth == 0 and current_chunk:
+            # When brace depth RETURNS to 0 (transition from >0 to 0), create chunk
+            if brace_depth == 0 and prev_depth > 0:
                 chunk_content = "\n".join(current_chunk).strip()
 
-                # Only create chunk if it meets minimum requirements
+                # Create chunk if it meets minimum requirements
+                # OR if it's a complete top-level construct (to avoid losing small classes)
                 if (
                     len(chunk_content) >= self.MIN_CHUNK_CHARS
                     and len(current_chunk) >= self.MIN_CHUNK_LINES
@@ -164,6 +166,7 @@ class CodeIndexer:
                 current_chunk = []
                 chunk_start_line = line_number + 1
 
+            prev_depth = brace_depth
             line_number += 1
 
         # Add remaining content as final chunk if significant
@@ -202,7 +205,9 @@ class CodeIndexer:
 
         for para in paragraphs:
             para = para.strip()
-            if len(para) >= self.MIN_CHUNK_CHARS:
+            # Keep paragraphs with minimum substance (avoid single-character snippets)
+            # Use a much lower threshold than code chunks (10 chars vs 50)
+            if len(para) >= 10:
                 num_lines = para.count("\n") + 1
                 chunks.append(
                     {
@@ -339,7 +344,8 @@ class CodeIndexer:
             # Only consider files under our root_path
             root_str = str(self.root_path.resolve())
             deleted_files = [
-                fp for fp in db_files
+                fp
+                for fp in db_files
                 if fp.startswith(root_str) and fp not in current_file_paths
             ]
 

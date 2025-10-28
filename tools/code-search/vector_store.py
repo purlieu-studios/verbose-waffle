@@ -50,7 +50,9 @@ class VectorStore:
         """Initialize the LanceDB table if it doesn't exist."""
         try:
             self.table = self.db.open_table(self.table_name)
-            print(f"Loaded existing table '{self.table_name}' with {len(self.table)} chunks")
+            print(
+                f"Loaded existing table '{self.table_name}' with {len(self.table)} chunks"
+            )
         except Exception:
             # Table doesn't exist, will be created on first add
             print(f"Table '{self.table_name}' will be created on first indexing")
@@ -173,7 +175,9 @@ class VectorStore:
 
                 if new_records:
                     self.table.add(new_records)
-                    print(f"Added {len(new_records)} new chunks (skipped {len(records) - len(new_records)} duplicates)")
+                    print(
+                        f"Added {len(new_records)} new chunks (skipped {len(records) - len(new_records)} duplicates)"
+                    )
                 else:
                     print("All chunks already exist in database")
 
@@ -209,11 +213,7 @@ class VectorStore:
         query_vector = self._generate_embedding(query)
 
         # Perform vector search
-        results = (
-            self.table.search(query_vector.tolist())
-            .limit(top_k)
-            .to_pandas()
-        )
+        results = self.table.search(query_vector.tolist()).limit(top_k).to_pandas()
 
         # Format results
         matches = []

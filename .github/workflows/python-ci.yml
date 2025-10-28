@@ -116,7 +116,7 @@ jobs:
         run: black --check tools/
 
       - name: Run isort (import sorting check)
-        run: isort --check-only tools/
+        run: isort --check-only --profile black tools/
 
       - name: Run Flake8 (linting)
         run: flake8 tools/ --max-line-length=100 --extend-ignore=E203,W503
