@@ -2,14 +2,14 @@
 Tests for the code indexer module.
 """
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import tempfile
 import os
-
 # Import the module we're testing
 import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from indexer import CodeIndexer
@@ -261,8 +261,9 @@ class TestIntegration:
 
     def test_index_empty_directory(self, tmp_path):
         """Test indexing an empty directory."""
-        from indexer import CodeIndexer
         from unittest.mock import Mock
+
+        from indexer import CodeIndexer
 
         indexer = CodeIndexer(str(tmp_path))
         mock_store = Mock()
@@ -276,8 +277,9 @@ class TestIntegration:
 
     def test_index_with_files(self, tmp_path):
         """Test indexing directory with actual files."""
-        from indexer import CodeIndexer
         from unittest.mock import Mock
+
+        from indexer import CodeIndexer
 
         # Create test files
         cs_file = tmp_path / "test.cs"
@@ -340,9 +342,10 @@ class TestIntegration:
 
     def test_remove_deleted_files(self, tmp_path):
         """Test that deleted files are removed from index."""
-        from indexer import CodeIndexer
         from unittest.mock import Mock
+
         import pandas as pd
+        from indexer import CodeIndexer
 
         # Create a file
         test_file = tmp_path / "test.cs"
@@ -377,8 +380,9 @@ class TestIntegration:
 
     def test_print_summary_called(self, tmp_path, capsys):
         """Test that summary is printed."""
-        from indexer import CodeIndexer
         from unittest.mock import Mock
+
+        from indexer import CodeIndexer
 
         test_file = tmp_path / "test.cs"
         test_file.write_text("public class Test { }")

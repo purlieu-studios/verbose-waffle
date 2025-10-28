@@ -2,12 +2,12 @@
 Tests for the RAG MCP server.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
-
 # Import the module we're testing
 import sys
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -244,6 +244,7 @@ class TestMCPServerInitialization:
         """Test that server initializes vector store on startup."""
         # Reimport to trigger initialization
         import importlib
+
         import rag_server
 
         importlib.reload(rag_server)

@@ -2,14 +2,14 @@
 Tests for the vector store module.
 """
 
+# Import the module we're testing
+import sys
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, call, patch
+
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import Mock, MagicMock, patch, call
-from pathlib import Path
-
-# Import the module we're testing
-import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from vector_store import VectorStore
