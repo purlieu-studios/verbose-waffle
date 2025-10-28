@@ -73,7 +73,9 @@ public partial class GameFacade
     /// <summary>
     /// Debug is not available in release builds.
     /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Must be instance method to match DEBUG build API
     public void EnableDebug()
+#pragma warning restore CA1822 // Mark members as static
     {
         // No-op in release builds
     }
@@ -81,7 +83,9 @@ public partial class GameFacade
     /// <summary>
     /// Debug is not available in release builds.
     /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Must be instance method to match DEBUG build API
     public void DisableDebug()
+#pragma warning restore CA1822 // Mark members as static
     {
         // No-op in release builds
     }
@@ -89,6 +93,36 @@ public partial class GameFacade
     /// <summary>
     /// Always false in release builds.
     /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Must be property to match DEBUG build API
     public bool IsDebugEnabled => false;
+#pragma warning restore CA1822 // Mark members as static
+
+    /// <summary>
+    /// Always null in release builds.
+    /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Must be property to match DEBUG build API
+    public SystemProfiler? Profiler => null;
+#pragma warning restore CA1822 // Mark members as static
+
+    /// <summary>
+    /// Always null in release builds.
+    /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Must be property to match DEBUG build API
+    public EventCommandLogger? EventLogger => null;
+#pragma warning restore CA1822 // Mark members as static
+
+    /// <summary>
+    /// Always null in release builds.
+    /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Must be property to match DEBUG build API
+    public ECSStateInspector? Inspector => null;
+#pragma warning restore CA1822 // Mark members as static
+
+    /// <summary>
+    /// Always null in release builds.
+    /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Must be property to match DEBUG build API
+    public ArchetypeInspector? ArchetypeInspector => null;
+#pragma warning restore CA1822 // Mark members as static
 #endif
 }
