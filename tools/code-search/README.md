@@ -20,11 +20,14 @@ pip install -r requirements.txt
 
 This installs:
 - `mcp` - MCP protocol for Claude integration
-- `lancedb` - Vector database
+- `lancedb` (0.25.x) - Vector database with lance2.0 format
 - `sentence-transformers` - Embedding model
 - `torch`, `numpy`, `pandas` - Supporting libraries
 
-**Note:** First run will download the `all-MiniLM-L6-v2` model (~80MB).
+**Notes:**
+- First run will download the `all-MiniLM-L6-v2` model (~80MB)
+- LanceDB 0.25.x is pinned for stability and uses the modern lance2.0 format
+- Upgrading from 0.3.x? Your existing database will work with 0.25.x without migration
 
 ### 2. Index Your Codebase
 

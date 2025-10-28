@@ -4,7 +4,9 @@
 mcp>=0.9.0
 
 # Vector Database
-lancedb>=0.3.0
+# Pinned to 0.25.x series - tested and verified working
+# Note: 0.25.x uses lance2.0 format with significant improvements over 0.3.x
+lancedb>=0.25.0,<0.26.0
 
 # Embeddings
 sentence-transformers>=2.2.0

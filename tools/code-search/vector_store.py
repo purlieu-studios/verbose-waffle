@@ -50,9 +50,10 @@ class VectorStore:
         """Initialize the LanceDB table if it doesn't exist."""
         try:
             self.table = self.db.open_table(self.table_name)
-            print(f"Loaded existing table '{self.table_name}' with {len(self.table)} chunks")
-        except Exception:
-            # Table doesn't exist, will be created on first add
+            count = len(self.table)
+            print(f"Loaded existing table '{self.table_name}' with {count} chunks")
+        except (ValueError, FileNotFoundError, Exception) as e:
+            # Table doesn't exist or database not initialized, will be created on first indexing
             print(f"Table '{self.table_name}' will be created on first indexing")
             self.table = None
 
